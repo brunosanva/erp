@@ -187,6 +187,8 @@
       <div class="app-subtitle">Controle de lançamentos por fornecedor</div>
     </div>
     <span class="sync-status" id="syncStatus">&#9679; Conectado</span>
+    <button id="ghPublishBtn" class="btn sm" onclick="publishToGitHub()" style="font-size:12px;border-color:#86efac;color:#166534;background:#f0fdf4">&#8679; Publicar no GitHub</button>
+    <button class="btn sm" onclick="configGHToken()" style="font-size:12px" title="Configurar token GitHub">&#9881;</button>
     <button class="btn-logout" onclick="doLogout()">Sair</button>
   </div>
 
@@ -545,16 +547,20 @@ function updateCompSummary(){
 }
 async function saveCompetencias(){
   setSyncStatus('syncing','&#9679; Salvando...');
-  var rows=[];
+  var map={};
   allRows.forEach(function(r,i){
     if(r.CODIGO&&competencias[i]){
-      rows.push({codigo:r.CODIGO,competencia:competencias[i],updated_at:new Date().toISOString()});
+      map[r.CODIGO]={codigo:r.CODIGO,competencia:competencias[i],updated_at:new Date().toISOString()};
       dbComp[r.CODIGO]=competencias[i];compSource[i]='auto';
     }
   });
+  var rows=Object.values(map);
   if(rows.length){
-    var {error}=await sb.from('competencias').upsert(rows,{onConflict:'codigo'});
-    if(error){setSyncStatus('err','&#9679; Erro ao salvar');showToast('Erro: '+error.message);return;}
+    for(var b=0;b<rows.length;b+=50){
+      var batch=rows.slice(b,b+50);
+      var res=await sb.from('competencias').upsert(batch,{onConflict:'codigo'});
+      if(res.error){setSyncStatus('err','&#9679; Erro ao salvar');showToast('Erro: '+res.error.message);return;}
+    }
   }
   setSyncStatus('ok','&#9679; Salvo');
   showToast('&#10003; '+rows.length+' competências salvas no banco!');
@@ -791,6 +797,52 @@ async function exportResumo(){
 }
 
 function ds(){var d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');}
+
+/* ── GITHUB AUTO-PUBLISH ── */
+var GH_TOKEN=localStorage.getItem('gh_token')||'';
+var GH_REPO='brunosanva/erp';
+var GH_FILE='index.html';
+var GH_BRANCH='main';
+
+function configGHToken(){
+  var current=localStorage.getItem('gh_token')||'';
+  var token=prompt('Cole seu GitHub Personal Access Token (ghp_...):', current);
+  if(token===null)return;
+  localStorage.setItem('gh_token', token.trim());
+  GH_TOKEN=token.trim();
+  showToast('&#10003; Token GitHub salvo!');
+}
+
+async function publishToGitHub(){
+  var btn=document.getElementById('ghPublishBtn');
+  btn.disabled=true;btn.textContent='Publicando...';
+  try{
+    /* get current SHA */
+    var shaRes=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE+'?ref='+GH_BRANCH,{
+      headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    var shaData=await shaRes.json();
+    var sha=shaData.sha;
+    /* get current file content */
+    var html=document.documentElement.outerHTML;
+    var encoded=btoa(unescape(encodeURIComponent(html)));
+    /* push update */
+    var res=await fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+GH_FILE,{
+      method:'PUT',
+      headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      body:JSON.stringify({message:'Dashboard atualizado automaticamente',content:encoded,sha:sha,branch:GH_BRANCH})
+    });
+    if(res.ok){
+      showToast('&#10003; Publicado no GitHub com sucesso!');
+    } else {
+      var err=await res.json();
+      showToast('Erro ao publicar: '+(err.message||res.status));
+    }
+  } catch(e){
+    showToast('Erro: '+e.message);
+  }
+  btn.disabled=false;btn.textContent='&#8679; Publicar no GitHub';
+}
 
 function switchTab(t){
   var tabs=['rel1','config','alias','proj','rel2'];
