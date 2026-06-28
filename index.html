@@ -212,7 +212,6 @@
 
   <div class="tabs-bar">
     <div class="tab active" onclick="switchTab('base')">&#128196; Base de dados</div>
-    <div class="tab" onclick="switchTab('cfg')">&#9881; Configurações</div>
     <div class="tab" onclick="switchTab('resumo')">&#9783; Resumo por fornecedor</div>
   </div>
 
@@ -249,11 +248,25 @@
         <span class="count-badge" id="countLabel">0 registros</span>
         <button class="btn export" style="margin-left:auto" onclick="exportLancamentos()">&#8659; Exportar Excel</button>
       </div>
+
+      <!-- TABELA REALIZADOS + CONFIG INLINE -->
+      <div class="pill-row" id="compSummary"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Código</th><th>Nome fornecedor</th><th>Doc. fornecedor</th><th>Histórico</th><th>Emissão</th><th>Nº documento</th><th>Categoria/Conta</th><th class="val">Valor total</th></tr></thead>
-          <tbody id="mainBody"><tr><td colspan="8" class="empty-row">&#8679; Importe um arquivo para visualizar os dados</td></tr></tbody>
+          <thead>
+            <tr>
+              <th>Código</th><th>Nome fornecedor</th><th>Doc. fornecedor</th>
+              <th>Histórico</th><th>Emissão</th><th>Nº documento</th>
+              <th>Categoria/Conta</th><th class="val">Valor total</th>
+              <th>Competência</th><th>Nome no resumo</th><th title="Exibir no resumo">&#128065;</th>
+            </tr>
+          </thead>
+          <tbody id="mainBody"><tr><td colspan="11" class="empty-row">&#8679; Importe um arquivo para visualizar os dados</td></tr></tbody>
         </table>
+      </div>
+      <div id="saveConfigArea" style="display:none;margin-top:12px">
+        <div class="pill-row" id="cfgSummary"></div>
+        <button class="btn success" onclick="saveConfig()">&#10003; Salvar competências e nomes</button>
       </div>
     </div>
 
@@ -280,35 +293,6 @@
           </table>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ═══ CONFIGURAÇÕES (unificado) ═══ -->
-  <div class="page" id="page-cfg">
-    <div class="section-block">
-      <div class="section-header">Histórico salvo no banco</div>
-      <div class="info-box">Configure <strong>competência</strong>, <strong>nome de exibição no resumo</strong> e <strong>visibilidade</strong> de cada lançamento. Tudo salvo por código — aplicado automaticamente nas próximas importações.</div>
-      <div class="pill-row" id="cfgSummary"><span class="pill"><span class="dot dot-gray"></span>Carregando...</span></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn success" onclick="saveConfig()">&#10003; Salvar configurações</button>
-      </div>
-    </div>
-    <div class="section-block">
-      <div class="section-header">Lançamentos</div>
-      <div class="pill-row" id="compSummary"></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Código</th><th>Nome fornecedor</th><th>Emissão</th>
-              <th>Histórico</th><th class="val">Valor</th>
-              <th>Competência</th><th>Nome no resumo</th><th title="Exibir no resumo">&#128065;</th><th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="cfgBody"><tr><td colspan="10" class="empty-row">Importe um arquivo na aba Base de dados primeiro</td></tr></tbody>
-        </table>
-      </div>
-      <div style="margin-top:14px"><button class="btn success" onclick="saveConfig()">&#10003; Salvar configurações</button></div>
     </div>
   </div>
 
@@ -496,11 +480,32 @@ function getFiltered(){
 function renderTable(){
   var rows=getFiltered(),body=document.getElementById('mainBody');
   document.getElementById('countLabel').textContent=rows.length+' registros';
-  if(!rows.length){body.innerHTML='<tr><td colspan="8" class="empty-row">Nenhum registro encontrado</td></tr>';return;}
+  if(!rows.length){body.innerHTML='<tr><td colspan="11" class="empty-row">Nenhum registro encontrado</td></tr>';return;}
   var total=0;
-  body.innerHTML=rows.map(function(r){total+=r.VALOR;
-    return'<tr><td>'+esc(r.CODIGO)+'</td><td>'+esc(r.NOME_FORN)+'</td><td>'+esc(r.DOC_FORN)+'</td><td>'+esc(r.HISTORICO)+'</td><td style="white-space:nowrap">'+esc(r.EMISSAO)+'</td><td>'+esc(r.NUM_DOC)+'</td><td>'+esc(r.CATEGORIA)+'</td><td class="val">'+fmtBRL(r.VALOR)+'</td></tr>';
-  }).join('')+'<tr class="total-row"><td colspan="7">Total</td><td class="val">'+fmtBRL(total)+'</td></tr>';
+  body.innerHTML=rows.map(function(r){
+    total+=r.VALOR;
+    var i=r._idx;
+    var isAuto=compSource[i]==='auto';
+    var compCls='ti w-comp'+(isAuto?' auto':(competencias[i]?' manual':''));
+    var aliasCls='ti w-alias'+(aliasSource[i]==='auto'&&aliases[i]?' auto':(aliases[i]?' manual':''));
+    var isHid=hidden[i]?true:false;
+    var eyeCls='eye-btn'+(isHid?' hidden':'');
+    return'<tr>'+
+      '<td>'+esc(r.CODIGO)+'</td>'+
+      '<td>'+esc(r.NOME_FORN)+'</td>'+
+      '<td>'+esc(r.DOC_FORN)+'</td>'+
+      '<td class="hist-cell">'+esc(r.HISTORICO)+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.EMISSAO)+'</td>'+
+      '<td>'+esc(r.NUM_DOC)+'</td>'+
+      '<td>'+esc(r.CATEGORIA)+'</td>'+
+      '<td class="val">'+fmtBRL(r.VALOR)+'</td>'+
+      '<td><input type="text" class="'+compCls+'" placeholder="MM/AAAA" maxlength="7" value="'+esc(competencias[i]||'')+'" data-idx="'+i+'" oninput="handleComp(this)"></td>'+
+      '<td><input type="text" class="'+aliasCls+'" placeholder="'+esc(r.NOME_FORN||r.CATEGORIA)+'" value="'+esc(aliases[i]||'')+'" data-idx="'+i+'" oninput="handleAlias(this)"></td>'+
+      '<td><button class="'+eyeCls+'" title="'+(isHid?'Oculto no resumo':'Visível no resumo')+'" data-idx="'+i+'" onclick="toggleHidden(this)">&#128065;</button></td>'+
+    '</tr>';
+  }).join('')+'<tr class="total-row"><td colspan="7">Total</td><td class="val">'+fmtBRL(total)+'</td><td colspan="3"></td></tr>';
+  document.getElementById('saveConfigArea').style.display='block';
+  updateCompSummary();
 }
 function updateStats(){
   document.getElementById('statsArea').style.display='block';
@@ -809,7 +814,7 @@ async function publishToGitHub(){
 
 /* NAVIGATION */
 function switchTab(t){
-  var tabs=['base','cfg','resumo'];
+  var tabs=['base','resumo'];
   document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('active',tabs[i]===t);});
   document.querySelectorAll('.page').forEach(function(el,i){el.classList.toggle('active',tabs[i]===t);});
 }
