@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
+<html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard ERP</title>
@@ -132,7 +130,7 @@
 <body>
 
 <!-- ═══ LOGIN ═══ -->
-<div id="loginScreen">
+<div id="loginScreen" style="display: none;">
   <div class="login-card">
 
     <!-- LOGIN -->
@@ -180,30 +178,30 @@
 </div>
 
 <!-- ═══ APP ═══ -->
-<div id="appScreen">
+<div id="appScreen" style="display: block;">
   <div class="app-header">
     <div>
       <div class="app-title">Dashboard ERP</div>
       <div class="app-subtitle">Controle de lançamentos por fornecedor</div>
     </div>
-    <span class="sync-status" id="syncStatus">&#9679; Conectado</span>
-    <button id="ghPublishBtn" class="btn sm" onclick="publishToGitHub()" style="font-size:12px;border-color:#86efac;color:#166534;background:#f0fdf4">&#8679; Publicar no GitHub</button>
-    <button class="btn sm" onclick="configGHToken()" style="font-size:12px" title="Configurar token GitHub">&#9881;</button>
+    <span class="sync-status ok" id="syncStatus">● Conectado</span>
+    <button id="ghPublishBtn" class="btn sm" onclick="publishToGitHub()" style="font-size:12px;border-color:#86efac;color:#166534;background:#f0fdf4" disabled="">Publicando...</button>
+    <button class="btn sm" onclick="configGHToken()" style="font-size:12px" title="Configurar token GitHub">⚙</button>
     <button class="btn-logout" onclick="doLogout()">Sair</button>
   </div>
 
   <div class="tabs-bar">
-    <div class="tab active" onclick="switchTab('rel1')">&#9776; Lançamentos</div>
-    <div class="tab" onclick="switchTab('config')">&#128203; Competências</div>
-    <div class="tab" onclick="switchTab('alias')">&#127991; Nome no resumo</div>
-    <div class="tab" onclick="switchTab('proj')">&#9878; Projetados</div>
-    <div class="tab" onclick="switchTab('rel2')">&#9783; Resumo por fornecedor</div>
+    <div class="tab active" onclick="switchTab('rel1')">☰ Lançamentos</div>
+    <div class="tab" onclick="switchTab('config')">📋 Competências</div>
+    <div class="tab" onclick="switchTab('alias')">🏷 Nome no resumo</div>
+    <div class="tab" onclick="switchTab('proj')">⚖ Projetados</div>
+    <div class="tab" onclick="switchTab('rel2')">☷ Resumo por fornecedor</div>
   </div>
 
   <!-- ABA 1: LANÇAMENTOS -->
   <div class="page active" id="page-rel1">
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">&#8679;</div>
+      <div class="upload-icon">⇧</div>
       <p>Clique para importar seu arquivo XLS/XLSX</p>
       <small>Competências e nomes salvos no banco serão aplicados automaticamente</small>
     </div>
@@ -224,12 +222,12 @@
       <label>Categoria:</label>
       <select id="filterCat" onchange="renderTable()"><option value="all">Todas</option></select>
       <span class="count-badge" id="countLabel">0 registros</span>
-      <button class="btn export" style="margin-left:auto" onclick="exportLancamentos()">&#8659; Exportar Excel</button>
+      <button class="btn export" style="margin-left:auto" onclick="exportLancamentos()">⇓ Exportar Excel</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Código</th><th>Nome fornecedor</th><th>Doc. fornecedor</th><th>Histórico</th><th>Emissão</th><th>Nº documento</th><th>Categoria/Conta</th><th class="val">Valor total</th></tr></thead>
-        <tbody id="mainBody"><tr><td colspan="8" class="empty-row">&#8679; Importe um arquivo para visualizar os dados</td></tr></tbody>
+        <tbody id="mainBody"><tr><td colspan="8" class="empty-row">⇧ Importe um arquivo para visualizar os dados</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -239,8 +237,8 @@
     <div class="section-block">
       <div class="section-header">Histórico salvo no banco</div>
       <div class="info-box">A competência é salva por <strong>código do lançamento</strong> no Supabase. Disponível em qualquer dispositivo automaticamente.</div>
-      <div class="pill-row" id="historySummary"><span class="pill"><span class="dot dot-gray"></span>Carregando...</span></div>
-      <button class="btn success" onclick="saveCompetencias()">&#10003; Salvar competências</button>
+      <div class="pill-row" id="historySummary"><span class="pill"><span class="dot dot-green"></span>0 códigos salvos no banco</span></div>
+      <button class="btn success" onclick="saveCompetencias()">✓ Salvar competências</button>
     </div>
     <div class="section-block">
       <div class="section-header">Competência por lançamento</div>
@@ -251,7 +249,7 @@
           <tbody id="compBody"><tr><td colspan="8" class="empty-row">Importe um arquivo na aba Lançamentos primeiro</td></tr></tbody>
         </table>
       </div>
-      <div style="margin-top:14px"><button class="btn success" onclick="saveCompetencias()">&#10003; Salvar competências</button></div>
+      <div style="margin-top:14px"><button class="btn success" onclick="saveCompetencias()">✓ Salvar competências</button></div>
     </div>
   </div>
 
@@ -260,8 +258,8 @@
     <div class="section-block">
       <div class="section-header">Como cada fornecedor aparece no resumo</div>
       <div class="info-box purple">Defina o <strong>nome de exibição</strong>. Vários fornecedores com o mesmo nome são <strong>somados numa única linha</strong>. Salvo no Supabase — aplicado automaticamente nas próximas importações.</div>
-      <div class="pill-row" id="aliasSummary"><span class="pill"><span class="dot dot-gray"></span>Carregando...</span></div>
-      <button class="btn success" onclick="saveAliases()">&#10003; Salvar nomes</button>
+      <div class="pill-row" id="aliasSummary"><span class="pill"><span class="dot dot-green"></span>0 salvos no banco</span></div>
+      <button class="btn success" onclick="saveAliases()">✓ Salvar nomes</button>
     </div>
     <div class="section-block">
       <div class="section-header">Fornecedores nesta importação</div>
@@ -271,7 +269,7 @@
           <tbody id="aliasBody"><tr><td colspan="5" class="empty-row">Importe um arquivo na aba Lançamentos primeiro</td></tr></tbody>
         </table>
       </div>
-      <div style="margin-top:14px"><button class="btn success" onclick="saveAliases()">&#10003; Salvar nomes</button></div>
+      <div style="margin-top:14px"><button class="btn success" onclick="saveAliases()">✓ Salvar nomes</button></div>
     </div>
   </div>
 
@@ -285,16 +283,16 @@
         <div><label>Competência (MM/AAAA)</label><input type="text" class="proj-input" id="pComp" placeholder="06/2024" maxlength="7" oninput="fmtCompInput(this)"></div>
         <div><label>Valor (R$)</label><input type="number" class="proj-input" id="pValor" placeholder="0,00" step="0.01" min="0"></div>
         <div><label>Observação (opcional)</label><input type="text" class="proj-input" id="pObs" placeholder="Anotação livre"></div>
-        <div style="padding-top:18px"><button class="btn primary" onclick="addProjetado()">&#43; Adicionar</button></div>
+        <div style="padding-top:18px"><button class="btn primary" onclick="addProjetado()">+ Adicionar</button></div>
       </div>
     </div>
     <div class="section-block">
       <div class="section-header">Registros projetados</div>
-      <div class="pill-row" id="projSummary"><span class="pill"><span class="dot dot-gray"></span>Carregando...</span></div>
+      <div class="pill-row" id="projSummary"><span class="pill"><span class="dot dot-gray"></span>Nenhum projetado</span></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Nome / Fornecedor</th><th>Competência</th><th class="val">Valor</th><th>Observação</th><th>Ação</th></tr></thead>
-          <tbody id="projBody"><tr><td colspan="5" class="empty-row">Carregando...</td></tr></tbody>
+          <tbody id="projBody"><tr><td colspan="5" class="empty-row">Nenhum lançamento projetado cadastrado ainda</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -302,10 +300,10 @@
 
   <!-- ABA 5: RESUMO -->
   <div class="page" id="page-rel2">
-    <div class="info-box" style="margin-bottom:14px">&#9654; Arraste as linhas pelo ícone <strong>&#8597;</strong> para reorganizar. A ordem é salva automaticamente no banco.</div>
+    <div class="info-box" style="margin-bottom:14px">▶ Arraste as linhas pelo ícone <strong>↕</strong> para reorganizar. A ordem é salva automaticamente no banco.</div>
     <div class="toolbar" style="margin-bottom:16px">
-      <button class="btn primary" onclick="renderPivot()">&#8635; Atualizar resumo</button>
-      <button class="btn export" onclick="exportResumo()">&#8659; Exportar Excel</button>
+      <button class="btn primary" onclick="renderPivot()">↻ Atualizar resumo</button>
+      <button class="btn export" onclick="exportResumo()">⇓ Exportar Excel</button>
       <span class="count-badge" id="pivotInfo" style="margin-left:auto"></span>
     </div>
     <div class="pivot-wrap">
@@ -314,7 +312,7 @@
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" class="">✓ Token GitHub salvo!</div>
 
 <script>
 /* ── SUPABASE ── */
@@ -856,5 +854,6 @@ function showToast(msg){
   setTimeout(function(){t.classList.remove('show');},3000);
 }
 </script>
-</body>
-</html>
+
+
+</body></html>
