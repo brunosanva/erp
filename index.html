@@ -298,10 +298,10 @@ tr.dov td{border-top:2px solid var(--accent)!important}
       </div>
       <div class="upzone" id="upzoneZeev" onclick="document.getElementById('fiZeev').click()">
         <div class="ico">&#8679;</div>
-        <p>Clique para importar a planilha Zeev (XLS/XLSX)</p>
+        <p>Clique para importar a planilha Zeev (XLS, XLSX ou CSV)</p>
         <small>Vínculos já salvos serão aplicados automaticamente</small>
       </div>
-      <input type="file" id="fiZeev" accept=".xls,.xlsx" style="display:none" onchange="onFileZeev(this)">
+      <input type="file" id="fiZeev" accept=".xls,.xlsx,.csv" style="display:none" onchange="onFileZeev(this)">
     </div>
 
     <div class="sb" id="zeevTableWrap" style="display:none">
@@ -875,10 +875,16 @@ var ZEEV_COL_MAP={
 
 function onFileZeev(input){
   var file=input.files[0];if(!file)return;
+  var isCSV=file.name.toLowerCase().endsWith('.csv');
   var reader=new FileReader();
   reader.onload=function(e){
     try{
-      var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      var wb;
+      if(isCSV){
+        wb=XLSX.read(e.target.result,{type:'string',cellDates:true,raw:false});
+      } else {
+        wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      }
       var ws=wb.Sheets[wb.SheetNames[0]];
       var json=XLSX.utils.sheet_to_json(ws,{defval:''});
       if(!json.length){alert('Planilha vazia.');return;}
@@ -907,7 +913,7 @@ function onFileZeev(input){
       renderZeev();
     }catch(err){alert('Erro: '+err.message);}
   };
-  reader.readAsBinaryString(file);
+  if(isCSV){reader.readAsText(file,'UTF-8');}else{reader.readAsBinaryString(file);}
 }
 
 function renderZeev(){
