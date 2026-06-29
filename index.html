@@ -117,6 +117,8 @@
   .badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap}
   .badge-auto{background:var(--success-bg);color:var(--success);border:1px solid #86efac}
   .badge-new{background:var(--warning-bg);color:var(--warning);border:1px solid #fcd34d}
+  .badge-sug{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+  .ti.sugerido{background:var(--purple-bg);border-color:var(--purple-border);color:var(--purple)}
 
   /* BUTTONS */
   .btn{padding:6px 13px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);font-size:13px;font-family:inherit;cursor:pointer;color:var(--text);transition:all .12s;display:inline-flex;align-items:center;gap:5px}
@@ -428,6 +430,30 @@ function findCol(headers,keys){
 }
 
 /* FILE IMPORT */
+/* AUTO COMPETÊNCIA */
+function autoComp(historico, emissao){
+  /* 1. busca MM/YYYY no histórico */
+  if(historico){
+    var s=historico.toString();
+    /* padrão MM/YYYY com 4 dígitos no ano */
+    var m=s.match(/\b(0[1-9]|1[0-2])\/(20\d{2})\b/);
+    if(m) return m[1]+'/'+m[2];
+  }
+  /* 2. extrai MM/YYYY da emissão (dd/mm/yyyy ou Date) */
+  if(emissao){
+    var es=emissao instanceof Date
+      ? String(emissao.getMonth()+1).padStart(2,'0')+'/'+emissao.getFullYear()
+      : emissao.toString();
+    /* dd/mm/yyyy */
+    var m2=es.match(/^(\d{2})\/(\d{2})\/(20\d{2})$/);
+    if(m2) return m2[2]+'/'+m2[3];
+    /* já no formato MM/YYYY */
+    var m3=es.match(/^(0[1-9]|1[0-2])\/(20\d{2})$/);
+    if(m3) return m3[0];
+  }
+  return '';
+}
+
 function handleFile(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -442,7 +468,8 @@ function handleFile(input){
     allRows=json.map(function(r,i){
       var codigo=(r[map.CODIGO]||'').toString().trim();
       var hc=dbComp[codigo],ha=dbAlias[codigo],hh=dbHidden[codigo];
-      competencias[i]=hc||'';compSource[i]=!codigo?'new':(hc?'auto':'new');
+      competencias[i]=hc||autoComp(r[map.HISTORICO],r[map.EMISSAO]);
+      compSource[i]=!codigo?'new':(hc?'auto':(autoComp(r[map.HISTORICO],r[map.EMISSAO])?'sugerido':'new'));
       aliases[i]=ha||'';aliasSource[i]=!codigo?'new':(ha!==undefined?'auto':'new');
       hidden[i]=hh?true:false;hiddenSource[i]=!codigo?'new':(hh!==undefined?'auto':'new');
       return{_idx:i,CODIGO:codigo,NOME_FORN:r[map.NOME_FORN]||'',DOC_FORN:r[map.DOC_FORN]||'',
@@ -486,7 +513,8 @@ function renderTable(){
     total+=r.VALOR;
     var i=r._idx;
     var isAuto=compSource[i]==='auto';
-    var compCls='ti w-comp'+(isAuto?' auto':(competencias[i]?' manual':''));
+    var isSug=compSource[i]==='sugerido';
+    var compCls='ti w-comp'+(isAuto?' auto':(isSug?' sugerido':(competencias[i]?' manual':'')));
     var aliasCls='ti w-alias'+(aliasSource[i]==='auto'&&aliases[i]?' auto':(aliases[i]?' manual':''));
     var isHid=hidden[i]?true:false;
     var eyeCls='eye-btn'+(isHid?' hidden':'');
@@ -559,11 +587,13 @@ function toggleHidden(btn){
 }
 function updateCompSummary(){
   var auto=0,manual=0,empty=0;
-  allRows.forEach(function(r,i){if(!competencias[i])empty++;else if(compSource[i]==='auto')auto++;else manual++;});
+  var sug=0;
+  allRows.forEach(function(r,i){if(!competencias[i])empty++;else if(compSource[i]==='auto')auto++;else if(compSource[i]==='sugerido')sug++;else manual++;});
   document.getElementById('compSummary').innerHTML=
-    '<span class="pill"><span class="dot dot-green"></span>'+auto+' competências automáticas</span>'+
-    '<span class="pill"><span class="dot dot-orange"></span>'+manual+' manuais</span>'+
-    '<span class="pill"><span class="dot dot-gray"></span>'+empty+' sem competência</span>';
+    '<span class="pill"><span class="dot dot-green"></span>'+auto+' salvas no banco</span>'+
+    (sug?'<span class="pill"><span class="dot" style="background:var(--purple)"></span>'+sug+' sugeridas automaticamente</span>':'')+
+    (manual?'<span class="pill"><span class="dot dot-orange"></span>'+manual+' editadas manualmente</span>':'')+
+    (empty?'<span class="pill"><span class="dot dot-gray"></span>'+empty+' sem competência</span>':'');
 }
 function updateCfgSummary(){
   var total=Object.keys(dbComp).length,hid=Object.keys(dbHidden).length,alias=Object.keys(dbAlias).length;
