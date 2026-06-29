@@ -205,6 +205,7 @@ tr.dov td{border-top:2px solid var(--accent)!important}
 
   <div class="tabs">
     <div class="tab on"  onclick="goTab('base')">&#128196; Base de dados</div>
+    <div class="tab"     onclick="goTab('zeev')">&#128279; Zeev</div>
     <div class="tab"     onclick="goTab('resumo')">&#9783; Resumo por fornecedor</div>
   </div>
 
@@ -284,6 +285,49 @@ tr.dov td{border-top:2px solid var(--accent)!important}
             <tbody id="projBody"><tr><td colspan="5" class="erow">Carregando...</td></tr></tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZEEV -->
+  <div class="pg" id="pg-zeev" style="padding:20px">
+    <div class="sb">
+      <div class="sh">Importar planilha Zeev</div>
+      <div class="ibox">
+        Importe a planilha exportada do Zeev. O sistema compara a coluna <strong>codLancamentoOngsys</strong> com os códigos da aba <strong>Realizados</strong>. Onde não houver correspondência, o campo fica disponível para preenchimento manual. Os vínculos são salvos automaticamente.
+      </div>
+      <div class="upzone" id="upzoneZeev" onclick="document.getElementById('fiZeev').click()">
+        <div class="ico">&#8679;</div>
+        <p>Clique para importar a planilha Zeev (XLS/XLSX)</p>
+        <small>Vínculos já salvos serão aplicados automaticamente</small>
+      </div>
+      <input type="file" id="fiZeev" accept=".xls,.xlsx" style="display:none" onchange="onFileZeev(this)">
+    </div>
+
+    <div class="sb" id="zeevTableWrap" style="display:none">
+      <div class="sh">Registros Zeev</div>
+      <div class="prow" id="zeevSummary"></div>
+      <div class="tb" style="margin-bottom:12px">
+        <button class="btn suc" onclick="saveZeev()">&#10003; Salvar vínculos</button>
+        <button class="btn exp" onclick="exportZeev()">&#8659; Exportar Excel</button>
+        <span class="cbadge" id="zeevLabel" style="margin-left:auto">0 registros</span>
+      </div>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>Nº Solicitação</th>
+              <th>Solicitante</th>
+              <th>Setor</th>
+              <th>Prestador</th>
+              <th>Nº Doc.</th>
+              <th class="val">Valor (R$)</th>
+              <th>Cód. Lançamento (Ongsys)</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="zeevBody"><tr><td colspan="8" class="erow">Importe a planilha para visualizar</td></tr></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -381,7 +425,7 @@ async function startApp(){
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('appWrap').style.display='block';
   setSyncing();
-  await loadDB();
+  await Promise.all([loadDB(), loadZeevDB()]);
   setSaved();
   renderProjTable();
 }
@@ -808,10 +852,128 @@ async function publishGH(){
 }
 
 /* ── NAV ── */
+/* ── ZEEV ── */
+var zeevRows=[], zeevCods={}, dbZeev={};
+
+async function loadZeevDB(){
+  try{
+    var res=await sb.from('zeev_codigos').select('num_solicitacao,cod_lancamento');
+    dbZeev={};
+    (res.data||[]).forEach(function(r){if(r.num_solicitacao)dbZeev[r.num_solicitacao]=r.cod_lancamento||'';});
+  }catch(e){console.warn('loadZeevDB:',e);}
+}
+
+var ZEEV_COL_MAP={
+  NUM:['Número da solicitação','numero da solicitacao'],
+  SOL:['Solicitante / Nome','solicitante / nome'],
+  SETOR:['setorSolicitante','setor solicitante'],
+  PREST:['nomeDoPrestador','nome do prestador'],
+  NDOC:['noDoDOC','no do doc'],
+  VALOR:['valorR','valor r','Valor R$','valor'],
+  COD:['codLancamentoOngsys','cod lancamento ongsys']
+};
+
+function onFileZeev(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var json=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!json.length){alert('Planilha vazia.');return;}
+      var headers=Object.keys(json[0]);
+      function fz(keys){
+        for(var k of keys){var f=headers.find(function(h){return h&&h.toString().toLowerCase().trim()===k.toLowerCase();});if(f)return f;}
+        for(var k of keys){var f=headers.find(function(h){return h&&h.toString().toLowerCase().trim().includes(k.toLowerCase());});if(f)return f;}
+        return null;
+      }
+      var map={};for(var k in ZEEV_COL_MAP)map[k]=fz(ZEEV_COL_MAP[k]);
+      zeevCods={};
+      zeevRows=json.map(function(r){
+        var num=(r[map.NUM]||'').toString().trim();
+        var codFromFile=(r[map.COD]||'').toString().trim();
+        var codSaved=dbZeev[num];
+        zeevCods[num]=codSaved!==undefined?codSaved:(codFromFile||'');
+        return{NUM:num,SOL:(r[map.SOL]||'').toString().trim(),SETOR:(r[map.SETOR]||'').toString().trim(),
+          PREST:(r[map.PREST]||'').toString().trim(),NDOC:(r[map.NDOC]||'').toString().trim(),
+          VALOR:parseFloat((r[map.VALOR]||'0').toString().replace(/[^\d,.\-]/g,'').replace(',','.'))||0,
+          COD_SAVED:codSaved!==undefined};
+      });
+      var uz=document.getElementById('upzoneZeev');
+      uz.className='upzone done';
+      uz.innerHTML='<div class="ico">&#10003;</div><p style="color:var(--green);font-weight:500">'+esc(file.name)+'</p><small>'+zeevRows.length+' registros</small>';
+      document.getElementById('zeevTableWrap').style.display='block';
+      renderZeev();
+    }catch(err){alert('Erro: '+err.message);}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderZeev(){
+  var tbody=document.getElementById('zeevBody');
+  document.getElementById('zeevLabel').textContent=zeevRows.length+' registros';
+  if(!zeevRows.length){tbody.innerHTML='<tr><td colspan="8" class="erow">Nenhum registro</td></tr>';return;}
+  var realCods=new Set(rows.map(function(r){return r.CODIGO;}));
+  var matched=0,notfound=0,pending=0;
+  tbody.innerHTML=zeevRows.map(function(r){
+    var cod=zeevCods[r.NUM]||'';
+    var inReal=cod&&realCods.has(cod);
+    var status,sc;
+    if(inReal){matched++;status='✓ Encontrado';sc='color:var(--green);font-weight:500';}
+    else if(cod){notfound++;status='⚠ Não encontrado';sc='color:var(--orange)';}
+    else{pending++;status='— Pendente';sc='color:var(--light)';}
+    var icls='ci'+(inReal?' saved':(r.COD_SAVED&&cod?' sug':(cod?' edited':'')));
+    return'<tr>'+
+      '<td>'+esc(r.NUM)+'</td>'+
+      '<td>'+esc(r.SOL)+'</td>'+
+      '<td>'+esc(r.SETOR)+'</td>'+
+      '<td>'+esc(r.PREST)+'</td>'+
+      '<td>'+esc(r.NDOC)+'</td>'+
+      '<td class="val">'+fmtR(r.VALOR)+'</td>'+
+      '<td><input type="text" class="'+icls+'" style="width:130px" placeholder="Cód. lançamento" value="'+esc(cod)+'" data-num="'+esc(r.NUM)+'" oninput="onZeevCod(this)"'+(inReal?' title="Código encontrado nos Realizados"':'')+' ></td>'+
+      '<td><span style="'+sc+'">'+status+'</span></td>'+
+    '</tr>';
+  }).join('');
+  document.getElementById('zeevSummary').innerHTML=
+    '<span class="pill"><span class="dot dg"></span>'+matched+' encontrados</span>'+
+    '<span class="pill"><span class="dot do"></span>'+notfound+' não encontrados</span>'+
+    '<span class="pill"><span class="dot dgr"></span>'+pending+' pendentes</span>';
+}
+
+function onZeevCod(el){zeevCods[el.dataset.num]=el.value.trim();el.className='ci'+(el.value.trim()?' edited':'');}
+
+async function saveZeev(){
+  setSyncing();
+  var batch=zeevRows.filter(function(r){return r.NUM;}).map(function(r){
+    return{num_solicitacao:r.NUM,cod_lancamento:zeevCods[r.NUM]||'',updated_at:new Date().toISOString()};
+  });
+  for(var b=0;b<batch.length;b+=50){
+    var res=await sb.from('zeev_codigos').upsert(batch.slice(b,b+50),{onConflict:'num_solicitacao'});
+    if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
+  }
+  batch.forEach(function(r){dbZeev[r.num_solicitacao]=r.cod_lancamento;});
+  setSaved();toast('✓ '+batch.length+' vínculos salvos!');renderZeev();
+}
+
+function exportZeev(){
+  if(!zeevRows.length){alert('Importe a planilha primeiro.');return;}
+  var realCods=new Set(rows.map(function(r){return r.CODIGO;}));
+  var data=[['Nº Solicitação','Solicitante','Setor','Prestador','Nº Doc.','Valor (R$)','Cód. Lançamento','Situação']];
+  zeevRows.forEach(function(r){
+    var cod=zeevCods[r.NUM]||'';
+    data.push([r.NUM,r.SOL,r.SETOR,r.PREST,r.NDOC,r.VALOR,cod,cod&&realCods.has(cod)?'Encontrado':(cod?'Não encontrado':'Pendente')]);
+  });
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:18},{wch:28},{wch:20},{wch:28},{wch:14},{wch:14},{wch:18},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Zeev');XLSX.writeFile(wb,'zeev_'+ds()+'.xlsx');toast('↓ Exportando...');
+}
+
 function goTab(t){
-  var ts=['base','resumo'];
+  var ts=['base','zeev','resumo'];
   document.querySelectorAll('.tab').forEach(function(el,i){el.className='tab'+(ts[i]===t?' on':'');});
   document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(ts[i]===t?' on':'');});
+  if(t==='zeev'){loadZeevDB().then(function(){if(zeevRows.length)renderZeev();});}
 }
 function goSub(s){
   var ss=['real','proj'];
