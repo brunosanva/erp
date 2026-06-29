@@ -881,7 +881,7 @@ function onFileZeev(input){
     try{
       var wb;
       if(isCSV){
-        wb=XLSX.read(e.target.result,{type:'string',cellDates:true,raw:false});
+        wb=XLSX.read(e.target.result,{type:'string',cellDates:true,raw:false,FS:';'});
       } else {
         wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       }
