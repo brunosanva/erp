@@ -378,11 +378,16 @@ async function doLogout(){
   allRows=[];competencias={};compSource={};aliases={};aliasSource={};hidden={};hiddenSource={};
 }
 async function initApp(){
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('appScreen').style.display='block';
-  setSyncStatus('ok','&#9679; Conectado');
-  await Promise.all([loadDb(), renderProjTable()]);
-  updateCfgSummary();
+  try{
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    setSyncStatus('ok','&#9679; Conectado');
+    await Promise.all([loadDb(), renderProjTable()]);
+    updateCfgSummary();
+  }catch(e){
+    console.error('initApp error:',e);
+    setSyncStatus('err','&#9679; Erro ao iniciar');
+  }
 }
 window.addEventListener('DOMContentLoaded',async function(){
   var {data:{session}}=await sb.auth.getSession();
@@ -394,14 +399,24 @@ function setSyncStatus(type,msg){var el=document.getElementById('syncStatus');el
 
 /* DB */
 async function loadDb(){
-  var [rc,ra,rh]=await Promise.all([
-    sb.from('competencias').select('codigo,competencia'),
-    sb.from('aliases').select('codigo,alias'),
-    sb.from('competencias').select('codigo,oculto')
-  ]);
-  dbComp={};(rc.data||[]).forEach(function(r){dbComp[r.codigo]=r.competencia;});
-  dbAlias={};(ra.data||[]).forEach(function(r){dbAlias[r.codigo]=r.alias;});
-  dbHidden={};(rh.data||[]).forEach(function(r){if(r.oculto)dbHidden[r.codigo]=true;});
+  try{
+    var [rc,ra]=await Promise.all([
+      sb.from('competencias').select('codigo,competencia,alias,oculto'),
+      sb.from('aliases').select('codigo,alias')
+    ]);
+    dbComp={};dbAlias={};dbHidden={};
+    (rc.data||[]).forEach(function(r){
+      if(r.competencia)dbComp[r.codigo]=r.competencia;
+      if(r.alias)dbAlias[r.codigo]=r.alias;
+      if(r.oculto)dbHidden[r.codigo]=true;
+    });
+    /* aliases table como fallback/complemento */
+    (ra.data||[]).forEach(function(r){
+      if(r.alias&&!dbAlias[r.codigo])dbAlias[r.codigo]=r.alias;
+    });
+  }catch(e){
+    console.error('loadDb error:',e);
+  }
 }
 async function loadDbOrder(){
   var {data}=await sb.from('ordem_fornecedores').select('ordem').eq('id',1).maybeSingle();
