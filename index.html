@@ -469,13 +469,14 @@ function onFile(input){
         var rawHist=r[map.HIST]||'';
         var rawEmis=r[map.EMIS];
         var suggested=autoComp(rawHist,rawEmis);
-        comp[i]=hc||suggested;
-        compSrc[i]=hc?'saved':(suggested?'sug':'new');
-        alias[i]=ha||'';
-        aliasSrc[i]=ha?'saved':'new';
-        vis[i]=hv===false?false:true;
+        var idx=String(i);
+        comp[idx]=hc||suggested;
+        compSrc[idx]=hc?'saved':(suggested?'sug':'new');
+        alias[idx]=ha||'';
+        aliasSrc[idx]=ha?'saved':'new';
+        vis[idx]=hv===false?false:true;
         return{
-          i:i,CODIGO:cod,NOME:r[map.NOME]||'',DOC:r[map.DOC]||'',
+          i:idx,CODIGO:cod,NOME:r[map.NOME]||'',DOC:r[map.DOC]||'',
           HIST:rawHist,EMIS:fmtD(rawEmis),NDOC:r[map.NDOC]||'',
           CAT:r[map.CAT]||'',
           VALOR:parseFloat((r[map.VALOR]||'0').toString().replace(/[^\d,.\-]/g,'').replace(',','.'))||0,
@@ -518,27 +519,34 @@ function renderRows(){
   document.getElementById('cLabel').textContent=filtered.length+' registros';
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" class="erow">Nenhum registro encontrado</td></tr>';return;}
   var total=0;
-  tbody.innerHTML=filtered.map(function(r){
-    var i=r.i;total+=r.VALOR;
-    var src=compSrc[i];
-    var ccls='ci cw'+(src==='saved'?' saved':(src==='sug'?' sug':(comp[i]?' edited':'')));
-    var acls='ci aw'+(aliasSrc[i]==='saved'&&alias[i]?' saved':(alias[i]?' edited':''));
-    var isVis=vis[i]!==false;
-    return'<tr>'+
-      '<td>'+esc(r.CODIGO)+'</td>'+
-      '<td>'+esc(r.NOME)+'</td>'+
-      '<td>'+esc(r.DOC)+'</td>'+
-      '<td><span class="trunc" title="'+esc(r.HIST)+'">'+esc(r.HIST)+'</span></td>'+
-      '<td>'+esc(r.EMIS)+'</td>'+
-      '<td>'+esc(r.NDOC)+'</td>'+
-      '<td>'+esc(r.CAT)+'</td>'+
-      '<td class="val">'+fmtR(r.VALOR)+'</td>'+
-      '<td><input type="text" class="'+ccls+'" placeholder="MM/AAAA" maxlength="7" value="'+esc(comp[i]||'')+'" data-i="'+i+'" oninput="onComp(this)"></td>'+
-      '<td><input type="text" class="'+acls+'" placeholder="'+esc(r.NOME||r.CAT)+'" value="'+esc(alias[i]||'')+'" data-i="'+i+'" oninput="onAlias(this)"></td>'+
-      '<td><button class="eye'+(isVis?'':' off')+'" data-i="'+i+'" onclick="togVis(this)" title="'+(isVis?'Visível':'Oculto')+' no resumo">&#128065;</button></td>'+
-    '</tr>';
-  }).join('')+
-  '<tr class="trow"><td colspan="7">Total</td><td class="val">'+fmtR(total)+'</td><td colspan="3"></td></tr>';
+  try{
+    tbody.innerHTML=filtered.map(function(r){
+      var i=String(r.i);total+=r.VALOR;
+      var src=compSrc[i]||'new';
+      var cv=comp[i]||'';
+      var av=alias[i]||'';
+      var isVis=vis[i]!==false;
+      var ccls='ci cw'+(src==='saved'?' saved':(src==='sug'?' sug':(cv?' edited':'')));
+      var acls='ci aw'+(aliasSrc[i]==='saved'&&av?' saved':(av?' edited':''));
+      return'<tr>'+
+        '<td>'+esc(r.CODIGO)+'</td>'+
+        '<td>'+esc(r.NOME)+'</td>'+
+        '<td>'+esc(r.DOC)+'</td>'+
+        '<td><span class="trunc" title="'+esc(r.HIST)+'">'+esc(r.HIST)+'</span></td>'+
+        '<td>'+esc(r.EMIS)+'</td>'+
+        '<td>'+esc(r.NDOC)+'</td>'+
+        '<td>'+esc(r.CAT)+'</td>'+
+        '<td class="val">'+fmtR(r.VALOR)+'</td>'+
+        '<td><input type="text" class="'+ccls+'" placeholder="MM/AAAA" maxlength="7" value="'+esc(cv)+'" data-i="'+i+'" oninput="onComp(this)"></td>'+
+        '<td><input type="text" class="'+acls+'" placeholder="'+esc(r.NOME||r.CAT)+'" value="'+esc(av)+'" data-i="'+i+'" oninput="onAlias(this)"></td>'+
+        '<td><button class="eye'+(isVis?'':' off')+'" data-i="'+i+'" onclick="togVis(this)" title="'+(isVis?'Visível':'Oculto')+' no resumo">&#128065;</button></td>'+
+      '</tr>';
+    }).join('')+
+    '<tr class="trow"><td colspan="7">Total</td><td class="val">'+fmtR(total)+'</td><td colspan="3"></td></tr>';
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="11" class="erow">Erro ao renderizar: '+e.message+'</td></tr>';
+    console.error('renderRows:',e);
+  }
   updateCSummary();
 }
 
