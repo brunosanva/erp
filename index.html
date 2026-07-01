@@ -250,10 +250,10 @@ tr.dov td{border-top:2px solid var(--accent)!important}
               <th>Código</th><th>Nome fornecedor</th><th>Doc. fornecedor</th>
               <th>Histórico</th><th>Emissão</th><th>Nº doc.</th>
               <th>Categoria/Conta</th><th class="val">Valor</th>
-              <th>Competência</th><th>Nome no resumo</th><th>&#128065;</th>
+              <th>Competência</th><th>Nome no resumo</th><th>#ZEEV</th><th>&#128065;</th>
             </tr>
           </thead>
-          <tbody id="tbody"><tr><td colspan="11" class="erow">&#8679; Importe um arquivo para visualizar</td></tr></tbody>
+          <tbody id="tbody"><tr><td colspan="12" class="erow">&#8679; Importe um arquivo para visualizar</td></tr></tbody>
         </table>
       </div>
 
@@ -426,6 +426,7 @@ async function startApp(){
   document.getElementById('appWrap').style.display='block';
   setSyncing();
   await Promise.all([loadDB(), loadZeevDB()]);
+  buildZeevMap();
   setSaved();
   renderProjTable();
 }
@@ -561,7 +562,7 @@ function renderRows(){
   var filtered=getFiltered();
   var tbody=document.getElementById('tbody');
   document.getElementById('cLabel').textContent=filtered.length+' registros';
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" class="erow">Nenhum registro encontrado</td></tr>';return;}
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" class="erow">Nenhum registro encontrado</td></tr>';return;}
   var total=0;
   try{
     tbody.innerHTML=filtered.map(function(r){
@@ -586,7 +587,7 @@ function renderRows(){
         '<td><button class="eye'+(isVis?'':' off')+'" data-i="'+i+'" onclick="togVis(this)" title="'+(isVis?'Visível':'Oculto')+' no resumo">&#128065;</button></td>'+
       '</tr>';
     }).join('')+
-    '<tr class="trow"><td colspan="7">Total</td><td class="val">'+fmtR(total)+'</td><td colspan="3"></td></tr>';
+    '<tr class="trow"><td colspan="7">Total</td><td class="val">'+fmtR(total)+'</td><td colspan="4"></td></tr>';
   }catch(e){
     tbody.innerHTML='<tr><td colspan="11" class="erow">Erro ao renderizar: '+e.message+'</td></tr>';
     console.error('renderRows:',e);
@@ -853,7 +854,7 @@ async function publishGH(){
 
 /* ── NAV ── */
 /* ── ZEEV ── */
-var zeevRows=[], zeevCods={}, dbZeev={};
+var zeevRows=[], zeevCods={}, dbZeev={}, zeevMap={};
 
 async function loadZeevDB(){
   try{
@@ -910,10 +911,24 @@ function onFileZeev(input){
       uz.className='upzone done';
       uz.innerHTML='<div class="ico">&#10003;</div><p style="color:var(--green);font-weight:500">'+esc(file.name)+'</p><small>'+zeevRows.length+' registros</small>';
       document.getElementById('zeevTableWrap').style.display='block';
+      buildZeevMap();
       renderZeev();
     }catch(err){alert('Erro: '+err.message);}
   };
   if(isCSV){reader.readAsText(file,'UTF-8');}else{reader.readAsBinaryString(file);}
+}
+
+function buildZeevMap(){
+  zeevMap={};
+  zeevRows.forEach(function(r){
+    var cod=zeevCods[r.NUM]||'';
+    if(cod&&cod.length===8) zeevMap[cod]=r.NUM;
+  });
+  /* also load from dbZeev for persistence */
+  Object.keys(dbZeev).forEach(function(num){
+    var cod=dbZeev[num]||'';
+    if(cod&&cod.length===8) zeevMap[cod]=num;
+  });
 }
 
 function renderZeev(){
@@ -959,7 +974,8 @@ async function saveZeev(){
     if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
   }
   batch.forEach(function(r){dbZeev[r.num_solicitacao]=r.cod_lancamento;});
-  setSaved();toast('✓ '+batch.length+' vínculos salvos!');renderZeev();
+  buildZeevMap();
+  setSaved();toast('✓ '+batch.length+' vínculos salvos!');renderZeev();renderRows();
 }
 
 function exportZeev(){
