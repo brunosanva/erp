@@ -56,27 +56,39 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:14px;backgr
 
 /* ── TABS ── */
 .tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;overflow-x:auto}
-.menubar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;overflow-x:auto;position:relative;z-index:100}
-.menu-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 18px;height:46px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-width:120px;user-select:none;transition:all .15s}
-.menu-item:hover{background:var(--surface-alt);color:var(--accent)}
-.menu-item.on{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-bg)}
-.arrow{font-size:10px;transition:transform .2s;color:var(--muted)}
-.arrow.open{transform:rotate(90deg)}
-.submenu{display:none;position:absolute;top:46px;left:0;background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:220px;z-index:200;padding:6px 0}
-.submenu.open{display:block}
-.menu-sub{padding:9px 18px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s;border-left:3px solid transparent}
-.menu-sub:hover{background:var(--surface-alt);color:var(--accent)}
-.menu-sub.on{color:var(--accent);font-weight:500;border-left-color:var(--accent);background:var(--accent-bg)}
-.submenu-inner{display:none;background:var(--surface-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.submenu-inner.open{display:block}
-.menu-leaf{padding:7px 18px 7px 32px;font-size:12px;color:var(--muted);cursor:pointer;transition:background .12s}
-.menu-leaf:hover{background:var(--accent-bg);color:var(--accent)}
-.menu-leaf.on{color:var(--accent);font-weight:500}
-.breadcrumb{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:8px 20px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+/* ── LAYOUT ── */
+.layout{display:flex;height:calc(100vh - 52px);overflow:hidden}
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;transition:width .2s;flex-shrink:0}
+.sidebar.collapsed{width:48px;min-width:48px}
+.sidebar.collapsed .sn-org-label,.sidebar.collapsed .sn-group,.sidebar.collapsed .sn-arrow{display:none}
+.sidebar-toggle{width:100%;padding:10px 14px;border:none;border-bottom:1px solid var(--border);background:transparent;cursor:pointer;text-align:left;font-size:16px;color:var(--muted);display:block}
+.sidebar-toggle:hover{background:var(--surface-alt)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* ── SIDEBAR NAV ── */
+.sn-org{display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);color:var(--text);transition:background .15s}
+.sn-org:hover{background:var(--surface-alt)}
+.sn-org.on{background:var(--accent-bg);color:var(--accent)}
+.sn-org-icon{font-size:15px;flex-shrink:0}
+.sn-org-label{flex:1}
+.sn-arrow{font-size:11px;color:var(--muted);transition:transform .2s}
+.sn-arrow.open{transform:rotate(90deg)}
+.sn-group{border-bottom:1px solid var(--border)}
+.sn-parent{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 9px 20px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:background .12s;user-select:none}
+.sn-parent:hover{background:var(--surface-alt);color:var(--text)}
+.sn-parent.on{color:var(--accent);background:var(--accent-bg)}
+.sn-single{font-weight:500}
+.sn-children{display:none;background:var(--bg)}
+.sn-children.open{display:block}
+.sn-item{padding:7px 14px 7px 32px;font-size:12px;color:var(--muted);cursor:pointer;transition:background .12s}
+.sn-item:hover{background:var(--accent-bg);color:var(--accent)}
+.sn-item.on{color:var(--accent);font-weight:600;background:var(--accent-bg);border-left:2px solid var(--accent)}
+
+/* ── BREADCRUMB ── */
+.breadcrumb{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:7px 20px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .bc-sep{color:var(--border-strong)}
-#bc-org{font-weight:600;color:var(--accent)}
-#bc-page{color:var(--text)}
-#bc-sub{color:var(--text)}
+#bc-org{font-weight:700;color:var(--accent)}
+#bc-page,#bc-sub{color:var(--text)}
 .tab{padding:11px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s}
 .tab:hover{color:var(--text)}.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
 .pg{display:none}.pg.on{display:block}
@@ -225,41 +237,70 @@ tr.dov td{border-top:2px solid var(--accent)!important}
   </div>
 
   <!-- MENU SUSPENSO -->
-  <div class="menubar" id="menubar">
-    <div class="menu-item" id="mi-semed" onclick="toggleMenu('semed')">
-      <span>&#127970; SEMED</span><span class="arrow" id="arr-semed">&#9656;</span>
-    </div>
-    <div class="submenu" id="sm-semed">
-      <div class="menu-sub" onclick="goPage('semed','base','real')">&#128196; Base de dados</div>
-      <div class="submenu-inner" id="sm-semed-base">
-        <div class="menu-leaf" onclick="goPage('semed','base','real')">&#9656; Realizados</div>
-        <div class="menu-leaf" onclick="goPage('semed','base','proj')">&#9656; Projetados</div>
-      </div>
-      <div class="menu-sub" onclick="goPage('semed','zeev','')">&#128279; Zeev</div>
-      <div class="menu-sub" onclick="goPage('semed','resumo','')">&#9783; Resumo por fornecedor</div>
-    </div>
-    <div class="menu-item" id="mi-semus" onclick="toggleMenu('semus')">
-      <span>&#127973; SEMUS</span><span class="arrow" id="arr-semus">&#9656;</span>
-    </div>
-    <div class="submenu" id="sm-semus">
-      <div class="menu-sub" onclick="goPage('semus','base','real')">&#128196; Base de dados</div>
-      <div class="submenu-inner" id="sm-semus-base">
-        <div class="menu-leaf" onclick="goPage('semus','base','real')">&#9656; Realizados</div>
-        <div class="menu-leaf" onclick="goPage('semus','base','proj')">&#9656; Projetados</div>
-      </div>
-      <div class="menu-sub" onclick="goPage('semus','zeev','')">&#128279; Zeev</div>
-      <div class="menu-sub" onclick="goPage('semus','resumo','')">&#9783; Resumo por fornecedor</div>
-    </div>
-  </div>
+  <!-- LAYOUT PRINCIPAL: SIDEBAR + CONTEUDO -->
+  <div class="layout">
 
-  <!-- BREADCRUMB -->
-  <div class="breadcrumb" id="breadcrumb">
-    <span id="bc-org">SEMED</span>
-    <span class="bc-sep">›</span>
-    <span id="bc-page">Base de dados</span>
-    <span class="bc-sep bc-sub-sep" id="bc-sub-sep">›</span>
-    <span id="bc-sub">Realizados</span>
-  </div>
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Recolher menu">&#9776;</button>
+
+      <!-- SEMED -->
+      <div class="sn-org" id="sn-semed" onclick="toggleOrg('semed')">
+        <span class="sn-org-icon">&#127970;</span>
+        <span class="sn-org-label">SEMED</span>
+        <span class="sn-arrow" id="sna-semed">&#9660;</span>
+      </div>
+      <div class="sn-group" id="sng-semed">
+        <div class="sn-parent" id="snp-semed-base" onclick="toggleParent('semed','base')">
+          <span>&#128196; Base de dados</span>
+          <span class="sn-arrow" id="snpa-semed-base">&#9656;</span>
+        </div>
+        <div class="sn-children" id="snc-semed-base">
+          <div class="sn-item" id="sni-semed-base-real" onclick="goPage('semed','base','real')">Realizados</div>
+          <div class="sn-item" id="sni-semed-base-proj" onclick="goPage('semed','base','proj')">Projetados</div>
+        </div>
+        <div class="sn-parent sn-single" id="snp-semed-zeev" onclick="goPage('semed','zeev','')">
+          <span>&#128279; Zeev</span>
+        </div>
+        <div class="sn-parent sn-single" id="snp-semed-resumo" onclick="goPage('semed','resumo','')">
+          <span>&#9783; Resumo</span>
+        </div>
+      </div>
+
+      <!-- SEMUS -->
+      <div class="sn-org" id="sn-semus" onclick="toggleOrg('semus')">
+        <span class="sn-org-icon">&#127973;</span>
+        <span class="sn-org-label">SEMUS</span>
+        <span class="sn-arrow" id="sna-semus">&#9656;</span>
+      </div>
+      <div class="sn-group" id="sng-semus" style="display:none">
+        <div class="sn-parent" id="snp-semus-base" onclick="toggleParent('semus','base')">
+          <span>&#128196; Base de dados</span>
+          <span class="sn-arrow" id="snpa-semus-base">&#9656;</span>
+        </div>
+        <div class="sn-children" id="snc-semus-base">
+          <div class="sn-item" id="sni-semus-base-real" onclick="goPage('semus','base','real')">Realizados</div>
+          <div class="sn-item" id="sni-semus-base-proj" onclick="goPage('semus','base','proj')">Projetados</div>
+        </div>
+        <div class="sn-parent sn-single" id="snp-semus-zeev" onclick="goPage('semus','zeev','')">
+          <span>&#128279; Zeev</span>
+        </div>
+        <div class="sn-parent sn-single" id="snp-semus-resumo" onclick="goPage('semus','resumo','')">
+          <span>&#9783; Resumo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AREA DE CONTEUDO -->
+    <div class="content" id="content">
+      <!-- BREADCRUMB -->
+      <div class="breadcrumb">
+        <span id="bc-org">SEMED</span>
+        <span class="bc-sep">›</span>
+        <span id="bc-page">Base de dados</span>
+        <span class="bc-sep" id="bc-sub-sep">›</span>
+        <span id="bc-sub">Realizados</span>
+      </div>
 
   <!-- BASE DE DADOS -->
   <div class="pg on" id="pg-base">
@@ -1048,31 +1089,65 @@ var currentOrg='semed';
 var currentPage='base';
 var currentSub='real';
 
-function toggleMenu(org){
-  var sm=document.getElementById('sm-'+org);
-  var arr=document.getElementById('arr-'+org);
-  var isOpen=sm.classList.contains('open');
-  // close all
-  document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
-  document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
-  document.querySelectorAll('.menu-item').forEach(function(el){el.classList.remove('on');});
+/* ── SIDEBAR ── */
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function toggleOrg(org){
+  var grp=document.getElementById('sng-'+org);
+  var arr=document.getElementById('sna-'+org);
+  var isOpen=grp.style.display!=='none';
+  // close all orgs
+  ['semed','semus'].forEach(function(o){
+    document.getElementById('sng-'+o).style.display='none';
+    document.getElementById('sna-'+o).classList.remove('open');
+    document.getElementById('sn-'+o).classList.remove('on');
+  });
   if(!isOpen){
-    sm.classList.add('open');
+    grp.style.display='block';
     arr.classList.add('open');
-    document.getElementById('mi-'+org).classList.add('on');
+    document.getElementById('sn-'+org).classList.add('on');
+  }
+}
+
+function toggleParent(org,page){
+  var ch=document.getElementById('snc-'+org+'-'+page);
+  var arr=document.getElementById('snpa-'+org+'-'+page);
+  var isOpen=ch.classList.contains('open');
+  ch.classList.toggle('open',!isOpen);
+  arr.style.transform=isOpen?'':'rotate(90deg)';
+}
+
+function setSidebarActive(org,page,sub){
+  // clear all
+  document.querySelectorAll('.sn-org').forEach(function(el){el.classList.remove('on');});
+  document.querySelectorAll('.sn-parent').forEach(function(el){el.classList.remove('on');});
+  document.querySelectorAll('.sn-item').forEach(function(el){el.classList.remove('on');});
+  // set org active and open
+  document.getElementById('sn-'+org).classList.add('on');
+  ['semed','semus'].forEach(function(o){document.getElementById('sng-'+o).style.display=o===org?'block':'none';});
+  document.getElementById('sna-'+org).classList.add('open');
+  // set page active
+  var pid='snp-'+org+'-'+page;
+  if(document.getElementById(pid))document.getElementById(pid).classList.add('on');
+  // set sub active and open children
+  if(sub){
+    var cid='snc-'+org+'-'+page;
+    var cel=document.getElementById(cid);
+    if(cel){cel.classList.add('open');}
+    var parr=document.getElementById('snpa-'+org+'-'+page);
+    if(parr)parr.style.transform='rotate(90deg)';
+    var iid='sni-'+org+'-'+page+'-'+sub;
+    if(document.getElementById(iid))document.getElementById(iid).classList.add('on');
   }
 }
 
 function goPage(org,page,sub){
-  // close all menus
-  document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
-  document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
-
   // switch org if needed
   if(org!==currentOrg){
     currentOrg=org;
     rows=[];comp={};compSrc={};alias={};aliasSrc={};vis={};zeevRows=[];zeevCods={};zeevMap={};
-    // reset upload zones
     var uz=document.getElementById('upzone');
     if(uz){uz.className='upzone';uz.innerHTML='<div class="ico">&#8679;</div><p>Clique para importar seu arquivo XLS/XLSX</p><small>Competências e nomes salvos serão aplicados automaticamente</small>';}
     var uzZ=document.getElementById('upzoneZeev');
@@ -1093,29 +1168,18 @@ function goPage(org,page,sub){
   document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(pgs[i]===page?' on':'');});
 
   // show correct sub if base
-  if(page==='base'&&sub){
+  if(page==='base'){
     var ss=['real','proj'];
-    document.querySelectorAll('.stab').forEach(function(el,i){el.className='stab'+(ss[i]===sub?' on':'');});
-    document.querySelectorAll('.spg').forEach(function(el,i){el.className='spg'+(ss[i]===sub?' on':'');});
-    if(sub==='proj')renderProjTable();
-    // toggle base submenu open
-    document.getElementById('sm-'+org+'-base').classList.add('open');
+    var s=sub||'real';
+    document.querySelectorAll('.stab').forEach(function(el,i){el.className='stab'+(ss[i]===s?' on':'');});
+    document.querySelectorAll('.spg').forEach(function(el,i){el.className='spg'+(ss[i]===s?' on':'');});
+    if(s==='proj')renderProjTable();
   }
 
   if(page==='zeev')loadZeevDB().then(function(){if(zeevRows.length)renderZeev();});
 
-  // update menu active states
-  document.querySelectorAll('.menu-item').forEach(function(el){el.classList.remove('on');});
-  document.querySelectorAll('.menu-sub').forEach(function(el){el.classList.remove('on');});
-  document.querySelectorAll('.menu-leaf').forEach(function(el){el.classList.remove('on');});
-  document.getElementById('mi-'+org).classList.add('on');
-  // highlight active sub
-  var subEl=document.querySelector('#sm-'+org+' .menu-sub[onclick*="goPage(\''+org+'\',\''+page+'\'"]');
-  if(subEl)subEl.classList.add('on');
-  if(sub){
-    var leafEl=document.querySelector('#sm-'+org+'-'+page+' .menu-leaf[onclick*="\''+sub+'\'"]');
-    if(leafEl)leafEl.classList.add('on');
-  }
+  // update sidebar active states
+  setSidebarActive(org,page,sub);
 
   // update breadcrumb
   var pageNames={base:'Base de dados',zeev:'Zeev',resumo:'Resumo por fornecedor'};
@@ -1128,16 +1192,10 @@ function goPage(org,page,sub){
   else{subSep.style.display='none';bcSub.style.display='none';}
 }
 
-// close menu when clicking outside
-document.addEventListener('click',function(e){
-  if(!e.target.closest('.menubar')){
-    document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
-    document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
-  }
-});
 function goSub(s){goPage(currentOrg,'base',s);}
 function toast(msg){
   var t=document.getElementById('toast');t.textContent=msg;t.className='on';
+
   setTimeout(function(){t.className='';},3000);
 }
 </script>
