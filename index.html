@@ -56,11 +56,27 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:14px;backgr
 
 /* ── TABS ── */
 .tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;overflow-x:auto}
-#orgTabs{background:var(--accent);border-bottom:none}
-#orgTabs .tab{color:rgba(255,255,255,.65);font-weight:600;font-size:14px;padding:13px 22px}
-#orgTabs .tab:hover{color:#fff}
-#orgTabs .tab.on{color:#fff;border-bottom-color:#fff}
-#subOrgTabs{background:var(--surface-alt);border-top:none}
+.menubar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;overflow-x:auto;position:relative;z-index:100}
+.menu-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 18px;height:46px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-width:120px;user-select:none;transition:all .15s}
+.menu-item:hover{background:var(--surface-alt);color:var(--accent)}
+.menu-item.on{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-bg)}
+.arrow{font-size:10px;transition:transform .2s;color:var(--muted)}
+.arrow.open{transform:rotate(90deg)}
+.submenu{display:none;position:absolute;top:46px;left:0;background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:220px;z-index:200;padding:6px 0}
+.submenu.open{display:block}
+.menu-sub{padding:9px 18px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s;border-left:3px solid transparent}
+.menu-sub:hover{background:var(--surface-alt);color:var(--accent)}
+.menu-sub.on{color:var(--accent);font-weight:500;border-left-color:var(--accent);background:var(--accent-bg)}
+.submenu-inner{display:none;background:var(--surface-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.submenu-inner.open{display:block}
+.menu-leaf{padding:7px 18px 7px 32px;font-size:12px;color:var(--muted);cursor:pointer;transition:background .12s}
+.menu-leaf:hover{background:var(--accent-bg);color:var(--accent)}
+.menu-leaf.on{color:var(--accent);font-weight:500}
+.breadcrumb{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:8px 20px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.bc-sep{color:var(--border-strong)}
+#bc-org{font-weight:600;color:var(--accent)}
+#bc-page{color:var(--text)}
+#bc-sub{color:var(--text)}
 .tab{padding:11px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s}
 .tab:hover{color:var(--text)}.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
 .pg{display:none}.pg.on{display:block}
@@ -208,17 +224,41 @@ tr.dov td{border-top:2px solid var(--accent)!important}
     <button class="hbtn out" onclick="doLogout()">Sair</button>
   </div>
 
-  <!-- ABAS PRINCIPAIS: SEMED / SEMUS -->
-  <div class="tabs" id="orgTabs">
-    <div class="tab on" onclick="goOrg('semed')">&#127970; SEMED</div>
-    <div class="tab"    onclick="goOrg('semus')">&#127973; SEMUS</div>
+  <!-- MENU SUSPENSO -->
+  <div class="menubar" id="menubar">
+    <div class="menu-item" id="mi-semed" onclick="toggleMenu('semed')">
+      <span>&#127970; SEMED</span><span class="arrow" id="arr-semed">&#9656;</span>
+    </div>
+    <div class="submenu" id="sm-semed">
+      <div class="menu-sub" onclick="goPage('semed','base','real')">&#128196; Base de dados</div>
+      <div class="submenu-inner" id="sm-semed-base">
+        <div class="menu-leaf" onclick="goPage('semed','base','real')">&#9656; Realizados</div>
+        <div class="menu-leaf" onclick="goPage('semed','base','proj')">&#9656; Projetados</div>
+      </div>
+      <div class="menu-sub" onclick="goPage('semed','zeev','')">&#128279; Zeev</div>
+      <div class="menu-sub" onclick="goPage('semed','resumo','')">&#9783; Resumo por fornecedor</div>
+    </div>
+    <div class="menu-item" id="mi-semus" onclick="toggleMenu('semus')">
+      <span>&#127973; SEMUS</span><span class="arrow" id="arr-semus">&#9656;</span>
+    </div>
+    <div class="submenu" id="sm-semus">
+      <div class="menu-sub" onclick="goPage('semus','base','real')">&#128196; Base de dados</div>
+      <div class="submenu-inner" id="sm-semus-base">
+        <div class="menu-leaf" onclick="goPage('semus','base','real')">&#9656; Realizados</div>
+        <div class="menu-leaf" onclick="goPage('semus','base','proj')">&#9656; Projetados</div>
+      </div>
+      <div class="menu-sub" onclick="goPage('semus','zeev','')">&#128279; Zeev</div>
+      <div class="menu-sub" onclick="goPage('semus','resumo','')">&#9783; Resumo por fornecedor</div>
+    </div>
   </div>
 
-  <!-- SUB-ABAS DE CADA ORG -->
-  <div class="tabs" id="subOrgTabs" style="background:var(--surface-alt);border-top:none">
-    <div class="tab on" onclick="goTab('base')">&#128196; Base de dados</div>
-    <div class="tab"    onclick="goTab('zeev')">&#128279; Zeev</div>
-    <div class="tab"    onclick="goTab('resumo')">&#9783; Resumo por fornecedor</div>
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb" id="breadcrumb">
+    <span id="bc-org">SEMED</span>
+    <span class="bc-sep">›</span>
+    <span id="bc-page">Base de dados</span>
+    <span class="bc-sep bc-sub-sep" id="bc-sub-sep">›</span>
+    <span id="bc-sub">Realizados</span>
   </div>
 
   <!-- BASE DE DADOS -->
@@ -441,6 +481,7 @@ async function startApp(){
   buildZeevMap();
   setSaved();
   renderProjTable();
+  goPage('semed','base','real');
 }
 
 window.addEventListener('DOMContentLoaded',async function(){
@@ -458,7 +499,7 @@ function setSyncErr(){var el=document.getElementById('sync');el.className='sbadg
 /* ── LOAD DB ── */
 async function loadDB(){
   try{
-    var r1=await sb.from('competencias').select('codigo,competencia,alias,oculto');
+    var r1=await sb.from('competencias').select('codigo,competencia,alias,oculto').eq('org',currentOrg);
     if(r1.data){
       r1.data.forEach(function(r){
         if(r.codigo){
@@ -668,7 +709,7 @@ async function saveConfig(){
   if(batch.length){
     for(var b=0;b<batch.length;b+=50){
       var sl=batch.slice(b,b+50);
-      var res=await sb.from('competencias').upsert(sl,{onConflict:'codigo'});
+      var res=await sb.from('competencias').upsert(sl,{onConflict:'codigo,org'});
       if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
     }
   }
@@ -681,7 +722,7 @@ async function renderProjTable(){
   var tbody=document.getElementById('projBody');
   var sumEl=document.getElementById('projSum');
   try{
-    var res=await sb.from('projetados').select('*').order('created_at');
+    var res=await sb.from('projetados').select('*').eq('org',currentOrg).order('created_at');
     var data=res.data||[];
     if(!data.length){
       tbody.innerHTML='<tr><td colspan="5" class="erow">Nenhum projetado cadastrado</td></tr>';
@@ -702,7 +743,7 @@ async function addProj(){
   if(!nome||!c||!valor){alert('Preencha Nome, Competência e Valor.');return;}
   if(!/^\d{2}\/\d{4}$/.test(c)){alert('Competência deve ser MM/AAAA.');return;}
   setSyncing();
-  var res=await sb.from('projetados').insert({nome:nome,competencia:c,valor:valor,obs:obs});
+  var res=await sb.from('projetados').insert({nome:nome,competencia:c,valor:valor,obs:obs,org:currentOrg});
   if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
   document.getElementById('pNome').value='';document.getElementById('pComp').value='';
   document.getElementById('pValor').value='';document.getElementById('pObs').value='';
@@ -805,7 +846,7 @@ function initDrag(){
   });
 }
 async function loadOrd(){try{var r=await sb.from('ordem_fornecedores').select('ordem').eq('id',1).maybeSingle();return r.data?r.data.ordem:[];}catch(e){return[];}}
-async function saveOrd(o){try{await sb.from('ordem_fornecedores').upsert({id:1,ordem:o,updated_at:new Date().toISOString()});}catch(e){}}
+async function saveOrd(o){try{await sb.from('ordem_fornecedores').upsert({id:1,org:currentOrg,ordem:o,updated_at:new Date().toISOString()},{onConflict:'id,org'});}catch(e){}}
 
 /* ── EXPORT ── */
 function exportReal(){
@@ -870,7 +911,7 @@ var zeevRows=[], zeevCods={}, dbZeev={}, zeevMap={};
 
 async function loadZeevDB(){
   try{
-    var res=await sb.from('zeev_codigos').select('num_solicitacao,cod_lancamento');
+    var res=await sb.from('zeev_codigos').select('num_solicitacao,cod_lancamento').eq('org',currentOrg);
     dbZeev={};
     (res.data||[]).forEach(function(r){if(r.num_solicitacao)dbZeev[r.num_solicitacao]=r.cod_lancamento||'';});
   }catch(e){console.warn('loadZeevDB:',e);}
@@ -979,10 +1020,10 @@ function onZeevCod(el){zeevCods[el.dataset.num]=el.value.trim();el.className='ci
 async function saveZeev(){
   setSyncing();
   var batch=zeevRows.filter(function(r){return r.NUM;}).map(function(r){
-    return{num_solicitacao:r.NUM,cod_lancamento:zeevCods[r.NUM]||'',updated_at:new Date().toISOString()};
+    return{num_solicitacao:r.NUM,org:currentOrg,cod_lancamento:zeevCods[r.NUM]||'',updated_at:new Date().toISOString()};
   });
   for(var b=0;b<batch.length;b+=50){
-    var res=await sb.from('zeev_codigos').upsert(batch.slice(b,b+50),{onConflict:'num_solicitacao'});
+    var res=await sb.from('zeev_codigos').upsert(batch.slice(b,b+50),{onConflict:'num_solicitacao,org'});
     if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
   }
   batch.forEach(function(r){dbZeev[r.num_solicitacao]=r.cod_lancamento;});
@@ -1004,28 +1045,97 @@ function exportZeev(){
 }
 
 var currentOrg='semed';
+var currentPage='base';
+var currentSub='real';
 
-function goOrg(org){
-  currentOrg=org;
-  document.querySelectorAll('#orgTabs .tab').forEach(function(el,i){
-    el.className='tab'+((['semed','semus'][i])===org?' on':'');
-  });
-  // reset to base tab when switching org
-  goTab('base');
+function toggleMenu(org){
+  var sm=document.getElementById('sm-'+org);
+  var arr=document.getElementById('arr-'+org);
+  var isOpen=sm.classList.contains('open');
+  // close all
+  document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
+  document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
+  document.querySelectorAll('.menu-item').forEach(function(el){el.classList.remove('on');});
+  if(!isOpen){
+    sm.classList.add('open');
+    arr.classList.add('open');
+    document.getElementById('mi-'+org).classList.add('on');
+  }
 }
 
-function goTab(t){
-  var ts=['base','zeev','resumo'];
-  document.querySelectorAll('#subOrgTabs .tab').forEach(function(el,i){el.className='tab'+(ts[i]===t?' on':'');});
-  document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(ts[i]===t?' on':'');});
-  if(t==='zeev'){loadZeevDB().then(function(){if(zeevRows.length)renderZeev();});}
+function goPage(org,page,sub){
+  // close all menus
+  document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
+  document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
+
+  // switch org if needed
+  if(org!==currentOrg){
+    currentOrg=org;
+    rows=[];comp={};compSrc={};alias={};aliasSrc={};vis={};zeevRows=[];zeevCods={};zeevMap={};
+    // reset upload zones
+    var uz=document.getElementById('upzone');
+    if(uz){uz.className='upzone';uz.innerHTML='<div class="ico">&#8679;</div><p>Clique para importar seu arquivo XLS/XLSX</p><small>Competências e nomes salvos serão aplicados automaticamente</small>';}
+    var uzZ=document.getElementById('upzoneZeev');
+    if(uzZ){uzZ.className='upzone';uzZ.innerHTML='<div class="ico">&#8679;</div><p>Clique para importar a planilha Zeev (XLS, XLSX ou CSV)</p><small>Vínculos já salvos serão aplicados automaticamente</small>';}
+    document.getElementById('statsWrap').style.display='none';
+    document.getElementById('saveBar').style.display='none';
+    document.getElementById('zeevTableWrap').style.display='none';
+    document.getElementById('tbody').innerHTML='<tr><td colspan="12" class="erow">&#8679; Importe um arquivo para visualizar</td></tr>';
+    document.getElementById('pivArea').innerHTML='<div class="erow" style="padding:40px">Importe um arquivo e salve as competências para ver o resumo</div>';
+    loadDB();loadZeevDB();
+  }
+
+  currentPage=page;
+  currentSub=sub||'real';
+
+  // show correct page
+  var pgs=['base','zeev','resumo'];
+  document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(pgs[i]===page?' on':'');});
+
+  // show correct sub if base
+  if(page==='base'&&sub){
+    var ss=['real','proj'];
+    document.querySelectorAll('.stab').forEach(function(el,i){el.className='stab'+(ss[i]===sub?' on':'');});
+    document.querySelectorAll('.spg').forEach(function(el,i){el.className='spg'+(ss[i]===sub?' on':'');});
+    if(sub==='proj')renderProjTable();
+    // toggle base submenu open
+    document.getElementById('sm-'+org+'-base').classList.add('open');
+  }
+
+  if(page==='zeev')loadZeevDB().then(function(){if(zeevRows.length)renderZeev();});
+
+  // update menu active states
+  document.querySelectorAll('.menu-item').forEach(function(el){el.classList.remove('on');});
+  document.querySelectorAll('.menu-sub').forEach(function(el){el.classList.remove('on');});
+  document.querySelectorAll('.menu-leaf').forEach(function(el){el.classList.remove('on');});
+  document.getElementById('mi-'+org).classList.add('on');
+  // highlight active sub
+  var subEl=document.querySelector('#sm-'+org+' .menu-sub[onclick*="goPage(\''+org+'\',\''+page+'\'"]');
+  if(subEl)subEl.classList.add('on');
+  if(sub){
+    var leafEl=document.querySelector('#sm-'+org+'-'+page+' .menu-leaf[onclick*="\''+sub+'\'"]');
+    if(leafEl)leafEl.classList.add('on');
+  }
+
+  // update breadcrumb
+  var pageNames={base:'Base de dados',zeev:'Zeev',resumo:'Resumo por fornecedor'};
+  var subNames={real:'Realizados',proj:'Projetados'};
+  document.getElementById('bc-org').textContent=org.toUpperCase();
+  document.getElementById('bc-page').textContent=pageNames[page]||page;
+  var subSep=document.getElementById('bc-sub-sep');
+  var bcSub=document.getElementById('bc-sub');
+  if(sub&&subNames[sub]){subSep.style.display='';bcSub.textContent=subNames[sub];bcSub.style.display='';}
+  else{subSep.style.display='none';bcSub.style.display='none';}
 }
-function goSub(s){
-  var ss=['real','proj'];
-  document.querySelectorAll('.stab').forEach(function(el,i){el.className='stab'+(ss[i]===s?' on':'');});
-  document.querySelectorAll('.spg').forEach(function(el,i){el.className='spg'+(ss[i]===s?' on':'');});
-  if(s==='proj')renderProjTable();
-}
+
+// close menu when clicking outside
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.menubar')){
+    document.querySelectorAll('.submenu').forEach(function(el){el.classList.remove('open');});
+    document.querySelectorAll('.arrow').forEach(function(el){el.classList.remove('open');});
+  }
+});
+function goSub(s){goPage(currentOrg,'base',s);}
 function toast(msg){
   var t=document.getElementById('toast');t.textContent=msg;t.className='on';
   setTimeout(function(){t.className='';},3000);
