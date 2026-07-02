@@ -56,6 +56,11 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:14px;backgr
 
 /* ── TABS ── */
 .tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;overflow-x:auto}
+#orgTabs{background:var(--accent);border-bottom:none}
+#orgTabs .tab{color:rgba(255,255,255,.65);font-weight:600;font-size:14px;padding:13px 22px}
+#orgTabs .tab:hover{color:#fff}
+#orgTabs .tab.on{color:#fff;border-bottom-color:#fff}
+#subOrgTabs{background:var(--surface-alt);border-top:none}
 .tab{padding:11px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:color .15s}
 .tab:hover{color:var(--text)}.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
 .pg{display:none}.pg.on{display:block}
@@ -203,10 +208,17 @@ tr.dov td{border-top:2px solid var(--accent)!important}
     <button class="hbtn out" onclick="doLogout()">Sair</button>
   </div>
 
-  <div class="tabs">
-    <div class="tab on"  onclick="goTab('base')">&#128196; Base de dados</div>
-    <div class="tab"     onclick="goTab('zeev')">&#128279; Zeev</div>
-    <div class="tab"     onclick="goTab('resumo')">&#9783; Resumo por fornecedor</div>
+  <!-- ABAS PRINCIPAIS: SEMED / SEMUS -->
+  <div class="tabs" id="orgTabs">
+    <div class="tab on" onclick="goOrg('semed')">&#127970; SEMED</div>
+    <div class="tab"    onclick="goOrg('semus')">&#127973; SEMUS</div>
+  </div>
+
+  <!-- SUB-ABAS DE CADA ORG -->
+  <div class="tabs" id="subOrgTabs" style="background:var(--surface-alt);border-top:none">
+    <div class="tab on" onclick="goTab('base')">&#128196; Base de dados</div>
+    <div class="tab"    onclick="goTab('zeev')">&#128279; Zeev</div>
+    <div class="tab"    onclick="goTab('resumo')">&#9783; Resumo por fornecedor</div>
   </div>
 
   <!-- BASE DE DADOS -->
@@ -991,9 +1003,20 @@ function exportZeev(){
   XLSX.utils.book_append_sheet(wb,ws,'Zeev');XLSX.writeFile(wb,'zeev_'+ds()+'.xlsx');toast('↓ Exportando...');
 }
 
+var currentOrg='semed';
+
+function goOrg(org){
+  currentOrg=org;
+  document.querySelectorAll('#orgTabs .tab').forEach(function(el,i){
+    el.className='tab'+((['semed','semus'][i])===org?' on':'');
+  });
+  // reset to base tab when switching org
+  goTab('base');
+}
+
 function goTab(t){
   var ts=['base','zeev','resumo'];
-  document.querySelectorAll('.tab').forEach(function(el,i){el.className='tab'+(ts[i]===t?' on':'');});
+  document.querySelectorAll('#subOrgTabs .tab').forEach(function(el,i){el.className='tab'+(ts[i]===t?' on':'');});
   document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(ts[i]===t?' on':'');});
   if(t==='zeev'){loadZeevDB().then(function(){if(zeevRows.length)renderZeev();});}
 }
