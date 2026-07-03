@@ -588,6 +588,34 @@ function fc(headers,keys){
 }
 
 /* ── FILE IMPORT ── */
+/* ── AGRUPAMENTO POR CÓDIGO ── */
+function groupRows(rawRows){
+  var map2={};  // codigo -> row agregado
+  var order=[];
+  rawRows.forEach(function(r){
+    var cod=r.CODIGO;
+    if(!cod){
+      /* sem código: mantém como está */
+      var uid='__nocode_'+r.i;
+      map2[uid]=r;order.push(uid);
+      return;
+    }
+    if(map2[cod]){
+      /* já existe: soma valor e unifica PAGO */
+      map2[cod].VALOR+=r.VALOR;
+      /* se qualquer um estiver em aberto, grupo fica em aberto */
+      if(r.PAGO==='nao') map2[cod].PAGO='nao';
+      /* concatena históricos diferentes */
+      if(r.HIST&&map2[cod].HIST&&r.HIST!==map2[cod].HIST)
+        map2[cod].HIST=map2[cod].HIST+' | '+r.HIST;
+    } else {
+      map2[cod]=Object.assign({},r);
+      order.push(cod);
+    }
+  });
+  return order.map(function(k){return map2[k];});
+}
+
 function onFile(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -622,11 +650,16 @@ function onFile(input){
           PAGO:normP(r[map.PAGO])
         };
       });
+
+      /* ── AGRUPAR por CODIGO: soma valores, mantém primeiro registro ── */
+      rows=groupRows(rows);
+      var totalRaw=json.length;
       var autoN=Object.values(compSrc).filter(function(s){return s==='saved';}).length;
       var sugN=Object.values(compSrc).filter(function(s){return s==='sug';}).length;
+      var grouped=totalRaw-rows.length;
       var uz=document.getElementById('upzone');
       uz.className='upzone done';
-      uz.innerHTML='<div class="ico">&#10003;</div><p style="color:var(--green);font-weight:500">'+esc(file.name)+'</p><small>'+rows.length+' registros &mdash; '+autoN+' competências do banco, '+sugN+' sugeridas automaticamente</small>';
+      uz.innerHTML='<div class="ico">&#10003;</div><p style="color:var(--green);font-weight:500">'+esc(file.name)+'</p><small>'+totalRaw+' registros importados'+(grouped?' &mdash; '+grouped+' agrupados por código':'')+(autoN?' &mdash; '+autoN+' competências do banco':'')+(sugN?' &mdash; '+sugN+' sugeridas':'')+'</small>';
       populateCats();renderRows();updateStats();
       document.getElementById('saveBar').style.display='block';
       updateCSummary();
