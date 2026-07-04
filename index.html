@@ -6,6 +6,8 @@
 <title>Dashboard ERP</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
   --bg:#f4f5f7;--surface:#fff;--surface-alt:#f8f9fa;--border:#e2e4e9;--border-strong:#c8cad0;
@@ -143,6 +145,10 @@ tbody tr:hover td{background:var(--surface-alt)}
 .eye{background:none;border:none;cursor:pointer;font-size:15px;padding:2px 5px;border-radius:4px;opacity:1;transition:opacity .15s;vertical-align:middle}
 .eye:hover{background:var(--surface-alt)}
 .eye.off{opacity:.25}
+.colEye{background:none;border:none;cursor:pointer;font-size:12px;padding:1px 4px;border-radius:4px;opacity:.5;transition:opacity .15s;margin-left:4px;vertical-align:middle}
+.colEye:hover{opacity:1;background:rgba(0,0,0,.06)}
+.colEye.off{opacity:.2}
+th.col-hidden,td.col-hidden{display:none}
 
 /* ── BUTTONS ── */
 .btn{padding:6px 13px;border-radius:var(--r);border:1px solid var(--border-strong);background:var(--surface);font-size:13px;font-family:inherit;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:background .12s}
@@ -333,21 +339,30 @@ tr.dov td{border-top:2px solid var(--accent)!important}
         <label>Categoria:</label>
         <select id="fCat" onchange="renderRows()"><option value="">Todas</option></select>
         <span class="cbadge" id="cLabel">0 registros</span>
-        <button class="btn exp" style="margin-left:auto" onclick="exportReal()">&#8659; Exportar Excel</button>
       </div>
 
       <div class="tw">
         <table>
           <thead>
-            <tr>
-              <th>Código</th><th>Nome fornecedor</th><th>Doc. fornecedor</th>
-              <th>Histórico</th><th>Emissão</th><th>Nº doc.</th>
-              <th>Categoria/Conta</th><th class="val">Valor</th>
-              <th>Competência</th><th>Nome no resumo</th><th>#ZEEV</th><th>&#128065;</th>
+            <tr id="theadRow">
+              <th data-col="CODIGO">Código <button class="colEye" data-col="CODIGO" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="NOME">Nome fornecedor <button class="colEye" data-col="NOME" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="DOC">Doc. fornecedor <button class="colEye" data-col="DOC" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="HIST">Histórico <button class="colEye" data-col="HIST" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="EMIS">Emissão <button class="colEye" data-col="EMIS" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="NDOC">Nº doc. <button class="colEye" data-col="NDOC" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th data-col="CAT">Categoria/Conta <button class="colEye" data-col="CAT" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th class="val" data-col="VALOR">Valor <button class="colEye" data-col="VALOR" onclick="toggleCol(this)" title="Ocultar coluna">&#128065;</button></th>
+              <th>Competência</th><th>Nome no resumo</th><th>#ZEEV</th><th title="Ocultar linha no resumo">&#128065;</th>
             </tr>
           </thead>
           <tbody id="tbody"><tr><td colspan="12" class="erow">&#8679; Importe um arquivo para visualizar</td></tr></tbody>
         </table>
+      </div>
+
+      <div class="tb" style="margin-top:10px">
+        <button class="btn exp" onclick="exportReal()">&#8659; Exportar Excel</button>
+        <button class="btn exp" onclick="exportRealPDF()">&#8659; Exportar PDF (paisagem)</button>
       </div>
 
       <div id="saveBar" style="display:none;margin-top:14px">
@@ -523,6 +538,7 @@ async function startApp(){
   setSaved();
   renderProjTable();
   goPage('semed','base','real');
+  applyColVisibility();
 }
 
 window.addEventListener('DOMContentLoaded',async function(){
@@ -616,6 +632,33 @@ function groupRows(rawRows){
   return order.map(function(k){return map2[k];});
 }
 
+/* ── VISIBILIDADE DE COLUNAS (para exportação) ── */
+var hiddenCols=JSON.parse(localStorage.getItem('hiddenCols')||'[]');
+
+function toggleCol(btn){
+  var col=btn.dataset.col;
+  var idx=hiddenCols.indexOf(col);
+  if(idx>=0)hiddenCols.splice(idx,1);
+  else hiddenCols.push(col);
+  localStorage.setItem('hiddenCols',JSON.stringify(hiddenCols));
+  applyColVisibility();
+}
+
+function applyColVisibility(){
+  var allCols=['CODIGO','NOME','DOC','HIST','EMIS','NDOC','CAT','VALOR'];
+  allCols.forEach(function(col){
+    var isHidden=hiddenCols.indexOf(col)>=0;
+    document.querySelectorAll('[data-col="'+col+'"]').forEach(function(el){
+      el.classList.toggle('col-hidden',isHidden);
+    });
+    var eyeBtn=document.querySelector('.colEye[data-col="'+col+'"]');
+    if(eyeBtn)eyeBtn.classList.toggle('off',isHidden);
+  });
+}
+
+var COL_LABELS={CODIGO:'Código',NOME:'Nome Fornecedor',DOC:'Doc. Fornecedor',HIST:'Histórico',EMIS:'Emissão',NDOC:'Nº Doc.',CAT:'Categoria/Conta',VALOR:'Valor Total'};
+var COL_KEYS=['CODIGO','NOME','DOC','HIST','EMIS','NDOC','CAT','VALOR'];
+
 function onFile(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -701,22 +744,24 @@ function renderRows(){
       var ccls='ci cw'+(src==='saved'?' saved':(src==='sug'?' sug':(cv?' edited':'')));
       var acls='ci aw'+(aliasSrc[i]==='saved'&&av?' saved':(av?' edited':''));
       return'<tr>'+
-        '<td>'+esc(r.CODIGO)+'</td>'+
-        '<td>'+esc(r.NOME)+'</td>'+
-        '<td>'+esc(r.DOC)+'</td>'+
-        '<td><span class="trunc" title="'+esc(r.HIST)+'">'+esc(r.HIST)+'</span></td>'+
-        '<td>'+esc(r.EMIS)+'</td>'+
-        '<td>'+esc(r.NDOC)+'</td>'+
-        '<td>'+esc(r.CAT)+'</td>'+
-        '<td class="val">'+fmtR(r.VALOR)+'</td>'+
+        '<td data-col="CODIGO">'+esc(r.CODIGO)+'</td>'+
+        '<td data-col="NOME">'+esc(r.NOME)+'</td>'+
+        '<td data-col="DOC">'+esc(r.DOC)+'</td>'+
+        '<td data-col="HIST"><span class="trunc" title="'+esc(r.HIST)+'">'+esc(r.HIST)+'</span></td>'+
+        '<td data-col="EMIS">'+esc(r.EMIS)+'</td>'+
+        '<td data-col="NDOC">'+esc(r.NDOC)+'</td>'+
+        '<td data-col="CAT">'+esc(r.CAT)+'</td>'+
+        '<td class="val" data-col="VALOR">'+fmtR(r.VALOR)+'</td>'+
         '<td><input type="text" class="'+ccls+'" placeholder="MM/AAAA" maxlength="7" value="'+esc(cv)+'" data-i="'+i+'" oninput="onComp(this)"></td>'+
         '<td><input type="text" class="'+acls+'" placeholder="'+esc(r.NOME||r.CAT)+'" value="'+esc(av)+'" data-i="'+i+'" oninput="onAlias(this)"></td>'+
+        '<td style="white-space:nowrap;color:var(--accent);font-size:12px">'+(zeevMap[r.CODIGO]?'#'+zeevMap[r.CODIGO]:'')+'</td>'+
         '<td><button class="eye'+(isVis?'':' off')+'" data-i="'+i+'" onclick="togVis(this)" title="'+(isVis?'Visível':'Oculto')+' no resumo">&#128065;</button></td>'+
       '</tr>';
     }).join('')+
     '<tr class="trow"><td colspan="7">Total</td><td class="val">'+fmtR(total)+'</td><td colspan="4"></td></tr>';
+    applyColVisibility();
   }catch(e){
-    tbody.innerHTML='<tr><td colspan="11" class="erow">Erro ao renderizar: '+e.message+'</td></tr>';
+    tbody.innerHTML='<tr><td colspan="12" class="erow">Erro ao renderizar: '+e.message+'</td></tr>';
     console.error('renderRows:',e);
   }
   updateCSummary();
@@ -926,15 +971,90 @@ async function saveOrd(o){try{await sb.from('ordem_fornecedores').upsert({id:1,o
 function exportReal(){
   if(!rows.length){alert('Importe um arquivo primeiro.');return;}
   var filtered=getFiltered();
-  var data=[['Código','Nome Fornecedor','Doc. Fornecedor','Histórico','Emissão','Nº Doc.','Categoria/Conta','Valor Total']];
+  var visibleKeys=COL_KEYS.filter(function(k){return hiddenCols.indexOf(k)<0;});
+  var header=visibleKeys.map(function(k){return COL_LABELS[k];});
+  var data=[header];
+  var valorIdx=visibleKeys.indexOf('VALOR');
   var tot=0;
-  filtered.forEach(function(r){data.push([r.CODIGO,r.NOME,r.DOC,r.HIST,r.EMIS,r.NDOC,r.CAT,r.VALOR]);tot+=r.VALOR;});
-  data.push(['','','','','','','Total',tot]);
+  filtered.forEach(function(r){
+    var row=visibleKeys.map(function(k){
+      if(k==='CODIGO')return r.CODIGO;
+      if(k==='NOME')return r.NOME;
+      if(k==='DOC')return r.DOC;
+      if(k==='HIST')return r.HIST;
+      if(k==='EMIS')return r.EMIS;
+      if(k==='NDOC')return r.NDOC;
+      if(k==='CAT')return r.CAT;
+      if(k==='VALOR')return r.VALOR;
+    });
+    data.push(row);
+    tot+=r.VALOR;
+  });
+  if(valorIdx>=0){
+    var totRow=visibleKeys.map(function(k,idx){return idx===valorIdx?tot:(idx===0?'Total':'');});
+    data.push(totRow);
+  }
   var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(data);
-  ws['!cols']=[{wch:12},{wch:30},{wch:20},{wch:40},{wch:12},{wch:14},{wch:28},{wch:16}];
-  for(var i=1;i<data.length;i++){var a=XLSX.utils.encode_cell({r:i,c:7});if(ws[a]&&typeof ws[a].v==='number')ws[a].z='"R$"#,##0.00';}
+  ws['!cols']=visibleKeys.map(function(k){return{wch:k==='HIST'?40:(k==='NOME'||k==='CAT'?28:16)};});
+  if(valorIdx>=0){
+    for(var i=1;i<data.length;i++){
+      var a=XLSX.utils.encode_cell({r:i,c:valorIdx});
+      if(ws[a]&&typeof ws[a].v==='number')ws[a].z='"R$"#,##0.00';
+    }
+  }
   XLSX.utils.book_append_sheet(wb,ws,'Realizados');
-  XLSX.writeFile(wb,'realizados_'+ds()+'.xlsx');toast('↓ Exportando...');
+  XLSX.writeFile(wb,'realizados_'+ds()+'.xlsx');toast('↓ Exportando Excel...');
+}
+
+function exportRealPDF(){
+  if(!rows.length){alert('Importe um arquivo primeiro.');return;}
+  if(!window.jspdf){toast('Carregando biblioteca PDF, tente novamente em instantes...');loadPdfLib(function(){exportRealPDF();});return;}
+  var filtered=getFiltered();
+  var visibleKeys=COL_KEYS.filter(function(k){return hiddenCols.indexOf(k)<0;});
+  var header=visibleKeys.map(function(k){return COL_LABELS[k];});
+  var valorIdx=visibleKeys.indexOf('VALOR');
+  var body=[];
+  var tot=0;
+  filtered.forEach(function(r){
+    var row=visibleKeys.map(function(k){
+      if(k==='VALOR')return fmtR(r.VALOR);
+      return r[k]||'';
+    });
+    body.push(row);
+    tot+=r.VALOR;
+  });
+  var { jsPDF }=window.jspdf;
+  var doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  doc.setFontSize(13);
+  doc.text('Realizados — '+currentOrg.toUpperCase(),40,30);
+  doc.setFontSize(9);
+  doc.text('Gerado em '+new Date().toLocaleDateString('pt-BR'),40,44);
+  doc.autoTable({
+    head:[header],
+    body:body,
+    startY:56,
+    styles:{fontSize:7,cellPadding:3,overflow:'linebreak'},
+    headStyles:{fillColor:[37,99,235],textColor:255,fontStyle:'bold'},
+    columnStyles: valorIdx>=0 ? (function(){var o={};o[valorIdx]={halign:'right'};return o;})() : {},
+    foot:valorIdx>=0?[visibleKeys.map(function(k,idx){return idx===valorIdx?fmtR(tot):(idx===0?'Total':'');})]:[],
+    footStyles:{fillColor:[240,244,255],textColor:20,fontStyle:'bold'},
+    margin:{left:30,right:30}
+  });
+  doc.save('realizados_'+ds()+'.pdf');
+  toast('↓ Exportando PDF...');
+}
+
+function loadPdfLib(cb){
+  if(window.jspdf){cb();return;}
+  var s1=document.createElement('script');
+  s1.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s1.onload=function(){
+    var s2=document.createElement('script');
+    s2.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+    s2.onload=cb;
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s1);
 }
 async function exportResumo(){
   if(!pivRows.length){alert('Atualize o resumo primeiro.');return;}
