@@ -8,6 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
   --bg:#f4f5f7;--surface:#fff;--surface-alt:#f8f9fa;--border:#e2e4e9;--border-strong:#c8cad0;
@@ -271,6 +273,9 @@ tr.dov td{border-top:2px solid var(--accent)!important}
         <div class="sn-parent sn-single" id="snp-semed-resumo" onclick="goPage('semed','resumo','')">
           <span>&#9783; Resumo</span>
         </div>
+        <div class="sn-parent sn-single" id="snp-semed-conciliador" onclick="goPage('semed','conciliador','')">
+          <span>&#9878; Conciliador</span>
+        </div>
       </div>
 
       <!-- SEMUS -->
@@ -293,6 +298,9 @@ tr.dov td{border-top:2px solid var(--accent)!important}
         </div>
         <div class="sn-parent sn-single" id="snp-semus-resumo" onclick="goPage('semus','resumo','')">
           <span>&#9783; Resumo</span>
+        </div>
+        <div class="sn-parent sn-single" id="snp-semus-conciliador" onclick="goPage('semus','conciliador','')">
+          <span>&#9878; Conciliador</span>
         </div>
       </div>
     </div>
@@ -450,7 +458,220 @@ tr.dov td{border-top:2px solid var(--accent)!important}
     </div>
     <div class="pw"><div id="pivArea"><div class="erow" style="padding:40px">Importe um arquivo e salve as competências para ver o resumo</div></div></div>
   </div>
+
+  <!-- CONCILIADOR DE PAGAMENTOS -->
+  <div class="pg" id="pg-conciliador" style="padding:20px">
+<style>
+#cnc-root {
+    --bg: #F6F3EA;
+    --panel: #FFFFFF;
+    --ink: #1B2E28;
+    --ink-soft: #55635C;
+    --line: #DDD6C4;
+    --brand: #16463A;
+    --brand-2: #2F6F4E;
+    --gold: #B08D2A;
+    --danger-bg: #FBE7E4;
+    --danger-ink: #8A2A1E;
+    --danger-line: #E7B3A9;
+    --ok-bg: #E7F1E4;
+    --ok-ink: #285B2E;
+    --ok-line: #B7D4AE;
+    --warn-bg: #FCF3DC;
+    --warn-ink: #7A5A0A;
+    --warn-line: #E9CE8C;
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+  }
+#cnc-root * { box-sizing: border-box; }
+#cnc-root {
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 32px 20px 80px;
+  }
+#cnc-root .wrap { max-width: 1120px; margin: 0 auto; }
+#cnc-root header {
+    display:flex; align-items:center; gap:16px;
+    border-bottom: 2px solid var(--brand);
+    padding-bottom:18px; margin-bottom: 28px;
+  }
+#cnc-root .seal {
+    width:52px; height:52px; border-radius:50%;
+    border: 2px solid var(--brand);
+    display:flex; align-items:center; justify-content:center;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight:bold; font-size:20px; color:var(--brand);
+    flex-shrink:0;
+  }
+#cnc-root h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 26px; margin:0; color: var(--brand); letter-spacing: 0.2px;
+  }
+#cnc-root header p { margin: 4px 0 0; color: var(--ink-soft); font-size:14px; }
+#cnc-root .cols { display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items: stretch; }
+@media (max-width: 820px){
+#cnc-root .cols { grid-template-columns: 1fr; }
+}
+#cnc-root .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px; display:flex; flex-direction:column;
+  }
+#cnc-root .panel h2 {
+    font-size:15px; text-transform:uppercase; letter-spacing:0.6px;
+    color: var(--brand); margin:0 0 4px; font-family: Georgia, serif;
+  }
+#cnc-root .panel .sub { font-size:12.5px; color: var(--ink-soft); margin:0 0 14px; }
+#cnc-root .drop {
+    border: 1.5px dashed var(--line); border-radius:8px;
+    padding: 18px; text-align:center; cursor:pointer;
+    background: #FCFBF6; transition: border-color .15s, background .15s;
+  }
+#cnc-root .drop:hover, #cnc-root .drop.drag { border-color: var(--brand-2); background:#F1F6EE; }
+#cnc-root .drop input { display:none; }
+#cnc-root .drop .icon { font-size:22px; color: var(--brand-2); margin-bottom:6px; }
+#cnc-root .drop .label { font-size:13.5px; color: var(--ink); font-weight:600; }
+#cnc-root .drop .hint { font-size:11.5px; color: var(--ink-soft); margin-top:4px; }
+#cnc-root .or { text-align:center; font-size:11.5px; color: var(--ink-soft); margin: 12px 0; }
+#cnc-root textarea {
+    width:100%; min-height: 84px; border:1px solid var(--line); border-radius:6px;
+    padding:8px; font-family: 'IBM Plex Mono', monospace; font-size:12px; resize:vertical;
+    background:#FCFBF6; color: var(--ink);
+  }
+#cnc-root .file-status { font-size:12.5px; color: var(--brand-2); margin-top:8px; min-height:16px; }
+#cnc-root .file-status.err { color: var(--danger-ink); }
+#cnc-root button {
+    font-family:inherit; cursor:pointer; border-radius:6px; border:1px solid var(--line);
+    background: var(--panel); color: var(--ink); font-size:13.5px; padding:9px 14px;
+    transition: background .12s, border-color .12s;
+  }
+#cnc-root button:hover { background:#F1EFE4; }
+#cnc-root button.primary {
+    background: var(--brand); color:#fff; border-color: var(--brand); font-weight:600;
+  }
+#cnc-root button.primary:hover { background:#0E362D; }
+#cnc-root button.primary:disabled { background:#9BAAA3; border-color:#9BAAA3; cursor:not-allowed; }
+#cnc-root button.ghost { background:transparent; border-color:transparent; color: var(--brand-2); padding:4px 6px; font-size:12.5px; }
+#cnc-root button.ghost:hover { background:#F1F6EE; }
+#cnc-root .parse-btn-row { margin-top:12px; display:flex; justify-content:flex-end; }
+#cnc-root .preview { margin-top:16px; }
+#cnc-root .preview-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+#cnc-root .preview-head span { font-size:12px; color: var(--ink-soft); }
+#cnc-root table.data { width:100%; border-collapse:collapse; font-size:12.5px; }
+#cnc-root table.data th {
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.4px;
+    color: var(--ink-soft); border-bottom:1px solid var(--line); padding:5px 6px; font-weight:600;
+  }
+#cnc-root table.data td { border-bottom:1px solid #EEEAE0; padding:4px 6px; }
+#cnc-root table.data input {
+    width:100%; border:none; background:transparent; font-size:12.5px; color:var(--ink);
+    font-family:'IBM Plex Mono', monospace; padding:3px 2px; border-radius:4px;
+  }
+#cnc-root table.data input:focus { outline:none; background:#F1F6EE; }
+#cnc-root .val-col input { text-align:right; }
+#cnc-root .row-actions { text-align:center; width:30px; }
+#cnc-root .preview-scroll { max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:6px; }
+#cnc-root .add-row { margin-top:8px; }
+#cnc-root .center-controls { text-align:center; margin: 36px 0 8px; }
+#cnc-root #runBtn { font-size:15px; padding:12px 32px; }
+#cnc-root .summary { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin: 28px 0; }
+@media (max-width: 700px){
+#cnc-root .summary { grid-template-columns: repeat(2,1fr); }
+}
+#cnc-root .card { background: var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+#cnc-root .card .num { font-size:24px; font-weight:700; font-family: Georgia, serif; }
+#cnc-root .card .lbl { font-size:11.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px;}
+#cnc-root .card.ok .num { color: var(--ok-ink); }
+#cnc-root .card.warn .num { color: var(--warn-ink); }
+#cnc-root .card.danger .num { color: var(--danger-ink); }
+#cnc-root .card.total .num { color: var(--brand); }
+#cnc-root .toolbar { display:flex; justify-content:space-between; align-items:center; margin: 20px 0 10px; flex-wrap:wrap; gap:10px; }
+#cnc-root .filters { display:flex; gap:6px; flex-wrap:wrap; }
+#cnc-root .filters button { font-size:12px; padding:6px 11px; }
+#cnc-root .filters button.active { background: var(--brand); color:#fff; border-color:var(--brand); }
+#cnc-root table.results { width:100%; border-collapse: collapse; font-size:13px; background:var(--panel); border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+#cnc-root table.results th {
+    text-align:left; background: var(--brand); color:#fff; padding:9px 10px; font-size:11.5px;
+    text-transform:uppercase; letter-spacing:0.4px; font-weight:600;
+  }
+#cnc-root table.results td { padding:8px 10px; border-bottom: 1px solid #EEEAE0; vertical-align:top; }
+#cnc-root table.results tr:last-child td { border-bottom:none; }
+#cnc-root .status-pill {
+    display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+    white-space:nowrap;
+  }
+#cnc-root .st-ok { background: var(--ok-bg); color: var(--ok-ink); border:1px solid var(--ok-line); }
+#cnc-root .st-warn { background: var(--warn-bg); color: var(--warn-ink); border:1px solid var(--warn-line); }
+#cnc-root .st-danger { background: var(--danger-bg); color: var(--danger-ink); border:1px solid var(--danger-line); }
+#cnc-root tr.row-ok { background: #FCFDFB; }
+#cnc-root tr.row-warn { background: #FFFCF3; }
+#cnc-root tr.row-danger { background: #FFF9F8; }
+#cnc-root .mono { font-family:'IBM Plex Mono', monospace; font-size:12px; }
+#cnc-root .muted { color: var(--ink-soft); }
+#cnc-root .empty { text-align:center; padding:50px 20px; color: var(--ink-soft); font-size:14px; }
+#cnc-root .footer-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
+#cnc-root .hidden { display:none !important; }
+</style>
+    <div id="cnc-root">
+
+<div class="wrap">
+
+  <header>
+    <div class="seal">C</div>
+    <div>
+      <h1>Conciliador de pagamentos</h1>
+      <p>Compare um arquivo do que foi pago com um arquivo do que deveria ser pago — por CPF, nome ou valor.</p>
+    </div>
+  </header>
+
+  <div class="cols">
+    <div class="panel" id="panelA">
+      <h2>Lado A — o que foi pago</h2>
+      <p class="sub">Ex: relatório do banco, extrato de transferências.</p>
+      <div class="drop" data-side="A">
+        <input type="file" id="fileA" accept=".csv,.xlsx,.xls,.pdf,.txt">
+        <div class="icon">&#8681;</div>
+        <div class="label">Clique ou arraste o arquivo aqui</div>
+        <div class="hint">.xlsx, .csv, .pdf ou .txt</div>
+      </div>
+      <div class="or">— ou cole o texto/linhas abaixo —</div>
+      <textarea id="pasteA" placeholder="Cole aqui o texto copiado do PDF/planilha, uma pessoa por linha"></textarea>
+      <div class="parse-btn-row"><button id="parseA">Processar lado A</button></div>
+      <div class="file-status" id="statusA"></div>
+      <div class="preview hidden" id="previewA"></div>
+    </div>
+
+    <div class="panel" id="panelB">
+      <h2>Lado B — o que deveria pagar</h2>
+      <p class="sub">Ex: folha de pagamento, lista de fornecedores.</p>
+      <div class="drop" data-side="B">
+        <input type="file" id="fileB" accept=".csv,.xlsx,.xls,.pdf,.txt">
+        <div class="icon">&#8681;</div>
+        <div class="label">Clique ou arraste o arquivo aqui</div>
+        <div class="hint">.xlsx, .csv, .pdf ou .txt</div>
+      </div>
+      <div class="or">— ou cole o texto/linhas abaixo —</div>
+      <textarea id="pasteB" placeholder="Cole aqui o texto copiado do PDF/planilha, uma pessoa por linha"></textarea>
+      <div class="parse-btn-row"><button id="parseB">Processar lado B</button></div>
+      <div class="file-status" id="statusB"></div>
+      <div class="preview hidden" id="previewB"></div>
+    </div>
+  </div>
+
+  <div class="center-controls">
+    <button class="primary" id="runBtn" disabled>Comparar lado A com lado B</button>
+  </div>
+
+  <div id="resultsArea"></div>
+
 </div>
+
+
+    </div>
+  </div>
+
+    </div><!-- /content -->
+  </div><!-- /layout -->
+</div><!-- /appWrap -->
 
 <div id="toast"></div>
 
@@ -1317,7 +1538,7 @@ function goPage(org,page,sub){
   currentSub=sub||'real';
 
   // show correct page
-  var pgs=['base','zeev','resumo'];
+  var pgs=['base','zeev','resumo','conciliador'];
   document.querySelectorAll('.pg').forEach(function(el,i){el.className='pg'+(pgs[i]===page?' on':'');});
 
   // show correct sub if base
@@ -1335,7 +1556,7 @@ function goPage(org,page,sub){
   setSidebarActive(org,page,sub);
 
   // update breadcrumb
-  var pageNames={base:'Base de dados',zeev:'Zeev',resumo:'Resumo por fornecedor'};
+  var pageNames={base:'Base de dados',zeev:'Zeev',resumo:'Resumo por fornecedor',conciliador:'Conciliador de Pagamentos'};
   var subNames={real:'Realizados',proj:'Projetados'};
   document.getElementById('bc-org').textContent=org.toUpperCase();
   document.getElementById('bc-page').textContent=pageNames[page]||page;
@@ -1351,6 +1572,516 @@ function toast(msg){
 
   setTimeout(function(){t.className='';},3000);
 }
+
+/* ═══════════════ CONCILIADOR DE PAGAMENTOS ═══════════════ */
+
+const state = { A: [], B: [] };
+
+function stripAccents(s){
+  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function normName(s){
+  return stripAccents((s||'').toUpperCase()).replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();
+}
+function normCPF(s){
+  const d = (s||'').replace(/\D/g,'');
+  return d.length === 11 ? d : '';
+}
+function parseMoneyToken(tok){
+  if (tok == null) return null;
+  if (typeof tok === 'number') return tok;
+  let s = String(tok).trim().replace(/^R\$\s?/,'');
+  if (!s) return null;
+  s = s.replace(/\./g,'').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+function fmtMoney(n){
+  if (n === null || n === undefined || isNaN(n)) return '';
+  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function nameSimilarity(a, b){
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const wa = a.split(' ').filter(Boolean);
+  const wb = b.split(' ').filter(Boolean);
+  if (!wa.length || !wb.length) return 0;
+  const setB = new Set(wb);
+  let common = 0;
+  wa.forEach(w => { if (setB.has(w)) common++; });
+  return common / Math.max(wa.length, wb.length);
+}
+
+const CPF_RE = /\d{3}\.\d{3}\.\d{3}-\d{2}|\b\d{11}\b/g;
+const MONEY_RE = /R\$?\s?\d{1,3}(?:\.\d{3})*,\d{2}/g;
+const DATE_RE = /\b\d{2}\/\d{2}\/\d{4}\b/g;
+const LEADING_NUM_RE = /^\s*\d+\s+/;
+
+function looksLikeBoilerplate(line){
+  const l = line.toLowerCase();
+  return /central de atendimento|ouvidoria|relat[oó]rio|sac 0800|ag[eê]ncia\/conta|per[ií]odo:|filtros aplicados|cnpj:|comprovante|quantidade de pagamentos|valor total/.test(l);
+}
+
+function parseLines(lines){
+  const records = [];
+  let pending = null;
+  for (let raw of lines){
+    const line = raw.replace(/\t/g,' ').trim();
+    if (!line || looksLikeBoilerplate(line)) continue;
+
+    const cpfMatches = line.match(CPF_RE) || [];
+    const moneyMatches = line.match(MONEY_RE) || [];
+    const hasCPF = cpfMatches.length > 0;
+    const hasMoney = moneyMatches.length > 0;
+
+    if (hasCPF && hasMoney){
+      const cpfIdx = line.indexOf(cpfMatches[0]);
+      let namePart = line.slice(0, cpfIdx).replace(LEADING_NUM_RE,'').replace(DATE_RE,'').trim();
+      if (!namePart) namePart = pending ? pending.name : '';
+      records.push({ name: namePart, cpf: cpfMatches[0], valor: parseMoneyToken(moneyMatches[moneyMatches.length-1]) });
+      pending = null;
+    } else if (hasCPF && !hasMoney){
+      const cpfIdx = line.indexOf(cpfMatches[0]);
+      let namePart = line.slice(0, cpfIdx).replace(/^cpf:?/i,'').replace(LEADING_NUM_RE,'').trim();
+      const name = namePart && namePart.length > 3 ? namePart : (pending ? pending.name : '');
+      const valor = pending ? pending.valor : null;
+      records.push({ name, cpf: cpfMatches[0], valor });
+      pending = null;
+    } else if (hasMoney && !hasCPF){
+      const moneyIdx = line.lastIndexOf(moneyMatches[moneyMatches.length-1]);
+      let namePart = line.slice(0, moneyIdx).replace(LEADING_NUM_RE,'').replace(DATE_RE,'').trim();
+      if (namePart && namePart.length > 2){
+        pending = { name: namePart, valor: parseMoneyToken(moneyMatches[moneyMatches.length-1]) };
+      }
+    }
+  }
+  return records.filter(r => r.name || r.cpf || r.valor != null);
+}
+
+async function extractPDFLines(arrayBuffer){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const lines = [];
+  for (let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const rows = {};
+    content.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      if (!rows[y]) rows[y] = [];
+      rows[y].push({ x: item.transform[4], str: item.str });
+    });
+    const ys = Object.keys(rows).map(Number).sort((a,b) => b - a);
+    ys.forEach(y => {
+      const items = rows[y].sort((a,b) => a.x - b.x);
+      lines.push(items.map(i => i.str).join(' ').replace(/\s+/g,' ').trim());
+    });
+  }
+  return lines;
+}
+
+function sheetToRecords(workbook){
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+  const dataRows = rows.filter(r => r.some(c => c !== '' && c !== null));
+  if (!dataRows.length) return [];
+
+  const nCols = Math.max(...dataRows.map(r => r.length));
+  const colScore = [];
+  for (let c = 0; c < nCols; c++){
+    let cpfHits = 0, moneyHits = 0, textLenSum = 0, textHits = 0, total = 0;
+    dataRows.forEach(r => {
+      const v = r[c];
+      if (v === '' || v === undefined || v === null) return;
+      total++;
+      const s = String(v);
+      if (normCPF(s)) cpfHits++;
+      else if (typeof v === 'number' || /^\s*R?\$?\s?\d[\d.]*,?\d*\s*$/.test(s)) {
+        if (parseMoneyToken(v) !== null) moneyHits++;
+      } else if (/[A-Za-zÀ-ÿ]{2,}/.test(s)) {
+        textHits++; textLenSum += s.length;
+      }
+    });
+    colScore.push({ c, cpfHits, moneyHits, textHits, total, avgLen: textHits ? textLenSum/textHits : 0 });
+  }
+
+  let headerRowIdx = -1;
+  for (let i = 0; i < Math.min(3, dataRows.length); i++){
+    const joined = dataRows[i].join(' ').toLowerCase();
+    if (/nome|cpf|valor|l[ií]quido|profissional/.test(joined)){ headerRowIdx = i; break; }
+  }
+
+  const cpfCol = colScore.slice().sort((a,b) => b.cpfHits - a.cpfHits)[0];
+  const moneyCol = colScore.slice().sort((a,b) => b.moneyHits - a.moneyHits)[0];
+  const nameCol = colScore.filter(c => c.c !== (cpfCol?cpfCol.c:-1) && c.c !== (moneyCol?moneyCol.c:-1))
+                          .sort((a,b) => (b.textHits*b.avgLen) - (a.textHits*a.avgLen))[0];
+
+  const startRow = headerRowIdx >= 0 ? headerRowIdx + 1 : 0;
+  const records = [];
+  for (let i = startRow; i < dataRows.length; i++){
+    const r = dataRows[i];
+    const nameVal = nameCol ? r[nameCol.c] : '';
+    const cpfVal = cpfCol ? r[cpfCol.c] : '';
+    const valorVal = moneyCol ? r[moneyCol.c] : '';
+    if (!nameVal && !cpfVal && !valorVal) continue;
+    records.push({
+      name: nameVal ? String(nameVal).trim() : '',
+      cpf: cpfVal ? String(cpfVal).trim() : '',
+      valor: valorVal !== '' ? parseMoneyToken(valorVal) : null
+    });
+  }
+  return records;
+}
+
+function setStatus(side, msg, isErr){
+  const el = document.getElementById('status' + side);
+  el.textContent = msg;
+  el.className = 'file-status' + (isErr ? ' err' : '');
+}
+
+function renderPreview(side){
+  const container = document.getElementById('preview' + side);
+  const records = state[side];
+  if (!records.length){ container.classList.add('hidden'); container.innerHTML=''; return; }
+  container.classList.remove('hidden');
+  let html = '<div class="preview-head"><span>' + records.length + ' registro(s) — revise e corrija se preciso</span></div>';
+  html += '<div class="preview-scroll"><table class="data"><thead><tr><th>Nome</th><th>CPF</th><th style="text-align:right">Valor</th><th class="row-actions"></th></tr></thead><tbody id="tbody' + side + '"></tbody></table></div>';
+  html += '<button class="ghost add-row" data-side="' + side + '">+ adicionar linha</button>';
+  container.innerHTML = html;
+  const tbody = document.getElementById('tbody' + side);
+  records.forEach((rec, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><input value="' + (rec.name||'').replace(/"/g,'&quot;') + '" data-field="name" data-idx="' + idx + '"></td>' +
+      '<td><input value="' + (rec.cpf||'') + '" data-field="cpf" data-idx="' + idx + '" class="mono"></td>' +
+      '<td class="val-col"><input value="' + (rec.valor != null ? rec.valor.toFixed(2).replace('.', ',') : '') + '" data-field="valor" data-idx="' + idx + '" class="mono"></td>' +
+      '<td class="row-actions"><button class="ghost" data-remove="' + idx + '">&times;</button></td>';
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const idx = +e.target.dataset.idx, field = e.target.dataset.field;
+      if (field === 'valor') state[side][idx].valor = parseMoneyToken(e.target.value);
+      else state[side][idx][field] = e.target.value;
+      updateRunButton();
+    });
+  });
+  tbody.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      state[side].splice(+e.target.dataset.remove, 1);
+      renderPreview(side);
+      updateRunButton();
+    });
+  });
+  container.querySelector('.add-row').addEventListener('click', () => {
+    state[side].push({ name:'', cpf:'', valor: null });
+    renderPreview(side);
+  });
+}
+
+function updateRunButton(){
+  document.getElementById('runBtn').disabled = !(state.A.length && state.B.length);
+}
+
+async function handleFile(side, file){
+  if (!file) return;
+  setStatus(side, 'Processando ' + file.name + '...');
+  try{
+    const ext = file.name.split('.').pop().toLowerCase();
+    let records = [];
+    if (ext === 'csv' || ext === 'txt'){
+      const text = await file.text();
+      if (ext === 'csv' && text.includes(';') || text.includes(',')) {
+        const wb = XLSX.read(text, { type: 'string' });
+        records = sheetToRecords(wb);
+        if (!records.length) records = parseLines(text.split(/\r?\n/));
+      } else {
+        records = parseLines(text.split(/\r?\n/));
+      }
+    } else if (ext === 'xlsx' || ext === 'xls'){
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      records = sheetToRecords(wb);
+    } else if (ext === 'pdf'){
+      const buf = await file.arrayBuffer();
+      const lines = await extractPDFLines(buf);
+      records = parseLines(lines);
+    } else {
+      throw new Error('Formato não suportado');
+    }
+    state[side] = records;
+    setStatus(side, records.length + ' registro(s) extraído(s) de ' + file.name + '.');
+    renderPreview(side);
+    updateRunButton();
+  } catch(err){
+    setStatus(side, 'Erro ao ler arquivo: ' + err.message, true);
+  }
+}
+
+['A','B'].forEach(side => {
+  const drop = document.getElementById('panel' + side).querySelector('.drop');
+  const input = document.getElementById('file' + side);
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', e => handleFile(side, e.target.files[0]));
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag');
+    if (e.dataTransfer.files[0]) handleFile(side, e.dataTransfer.files[0]);
+  });
+  document.getElementById('parse' + side).addEventListener('click', () => {
+    const text = document.getElementById('paste' + side).value;
+    if (!text.trim()){ setStatus(side, 'Cole algum texto antes de processar.', true); return; }
+    const records = parseLines(text.split(/\r?\n/));
+    state[side] = records;
+    setStatus(side, records.length + ' registro(s) extraído(s) do texto colado.');
+    renderPreview(side);
+    updateRunButton();
+  });
+});
+
+let currentResults = [];
+let currentFilter = 'all';
+
+function compare(){
+  const A = state.A.map((r,i) => ({...r, _id:'A'+i, _ncpf: normCPF(r.cpf), _nname: normName(r.name), used:false}));
+  const B = state.B.map((r,i) => ({...r, _id:'B'+i, _ncpf: normCPF(r.cpf), _nname: normName(r.name), used:false}));
+
+  const results = [];
+
+  const cpfCountA = {}, cpfCountB = {};
+  A.forEach(r => { if(r._ncpf) cpfCountA[r._ncpf] = (cpfCountA[r._ncpf]||0)+1; });
+  B.forEach(r => { if(r._ncpf) cpfCountB[r._ncpf] = (cpfCountB[r._ncpf]||0)+1; });
+
+  A.forEach(a => {
+    if (a.used || !a._ncpf) return;
+    const match = B.find(b => !b.used && b._ncpf === a._ncpf);
+    if (match){
+      a.used = true; match.used = true;
+      results.push(buildResult(a, match));
+    }
+  });
+
+  A.forEach(a => {
+    if (a.used || a._ncpf) return;
+    if (!a._nname) return;
+    let best = null, bestScore = 0;
+    B.forEach(b => {
+      if (b.used) return;
+      const score = a._ncpf && b._ncpf ? (a._ncpf === b._ncpf ? 1 : 0) : nameSimilarity(a._nname, b._nname);
+      if (score > bestScore){ bestScore = score; best = b; }
+    });
+    if (best && bestScore >= 0.75){
+      a.used = true; best.used = true;
+      results.push(buildResult(a, best, bestScore < 1));
+    }
+  });
+
+  A.forEach(a => {
+    if (!a.used){
+      const isDup = a._ncpf && cpfCountA[a._ncpf] > (cpfCountB[a._ncpf]||0);
+      results.push({
+        nameA: a.name, cpfA: a.cpf, valorA: a.valor,
+        nameB: '', cpfB: '', valorB: null,
+        status: isDup ? 'danger' : 'danger',
+        label: isDup ? 'pago a mais (possível duplicata)' : 'só no lado A (pago, sem correspondência)'
+      });
+    }
+  });
+  B.forEach(b => {
+    if (!b.used){
+      results.push({
+        nameA: '', cpfA: '', valorA: null,
+        nameB: b.name, cpfB: b.cpf, valorB: b.valor,
+        status: 'danger',
+        label: 'só no lado B (deveria pagar, não encontrado)'
+      });
+    }
+  });
+
+  return results;
+}
+
+function buildResult(a, b, fuzzyName){
+  const valDiff = (a.valor != null && b.valor != null) ? Math.abs(a.valor - b.valor) > 0.009 : false;
+  let status = 'ok', label = 'ok';
+  if (valDiff){ status = 'danger'; label = 'valor divergente'; }
+  else if (fuzzyName){ status = 'warn'; label = 'nome parecido (conferir)'; }
+  else if (!a._ncpf || !b._ncpf){ status = 'warn'; label = 'sem cpf em um dos lados — casado por nome'; }
+  return {
+    nameA: a.name, cpfA: a.cpf, valorA: a.valor,
+    nameB: b.name, cpfB: b.cpf, valorB: b.valor,
+    status, label
+  };
+}
+
+document.getElementById('runBtn').addEventListener('click', () => {
+  const btn = document.getElementById('runBtn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Comparando...';
+  btn.disabled = true;
+  setTimeout(() => {
+    currentResults = compare();
+    currentFilter = 'all';
+    renderResults();
+    btn.textContent = originalText;
+    btn.disabled = false;
+    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 30);
+});
+
+function renderResults(){
+  const area = document.getElementById('resultsArea');
+  const total = currentResults.length;
+  const ok = currentResults.filter(r => r.status==='ok').length;
+  const warn = currentResults.filter(r => r.status==='warn').length;
+  const danger = currentResults.filter(r => r.status==='danger').length;
+
+  let html = '<div class="summary">' +
+    '<div class="card total"><div class="num">' + total + '</div><div class="lbl">Total comparado</div></div>' +
+    '<div class="card ok"><div class="num">' + ok + '</div><div class="lbl">Conferem</div></div>' +
+    '<div class="card warn"><div class="num">' + warn + '</div><div class="lbl">Verificar</div></div>' +
+    '<div class="card danger"><div class="num">' + danger + '</div><div class="lbl">Divergências</div></div>' +
+    '</div>';
+
+  html += '<div class="toolbar"><div class="filters">' +
+    '<button data-f="all" class="' + (currentFilter==='all'?'active':'') + '">Todos (' + total + ')</button>' +
+    '<button data-f="ok" class="' + (currentFilter==='ok'?'active':'') + '">Conferem (' + ok + ')</button>' +
+    '<button data-f="warn" class="' + (currentFilter==='warn'?'active':'') + '">Verificar (' + warn + ')</button>' +
+    '<button data-f="danger" class="' + (currentFilter==='danger'?'active':'') + '">Divergências (' + danger + ')</button>' +
+    '</div><div style="display:flex;gap:8px"><button id="exportXlsxBtn">Baixar XLSX (formatado)</button><button id="exportBtn">Baixar CSV</button></div></div>';
+
+  const filtered = currentFilter === 'all' ? currentResults : currentResults.filter(r => r.status === currentFilter);
+
+  if (!filtered.length){
+    html += '<div class="empty">Nenhum registro nessa categoria.</div>';
+  } else {
+    html += '<table class="results"><thead><tr>' +
+      '<th>Nome (A)</th><th>CPF (A)</th><th>Valor (A)</th>' +
+      '<th>Nome (B)</th><th>CPF (B)</th><th>Valor (B)</th><th>Status</th></tr></thead><tbody>';
+    filtered.forEach(r => {
+      const cls = r.status === 'ok' ? 'row-ok' : (r.status === 'warn' ? 'row-warn' : 'row-danger');
+      const pillCls = r.status === 'ok' ? 'st-ok' : (r.status === 'warn' ? 'st-warn' : 'st-danger');
+      html += '<tr class="' + cls + '">' +
+        '<td>' + (r.nameA || '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (r.cpfA || '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (r.valorA != null ? fmtMoney(r.valorA) : '<span class="muted">—</span>') + '</td>' +
+        '<td>' + (r.nameB || '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (r.cpfB || '<span class="muted">—</span>') + '</td>' +
+        '<td class="mono">' + (r.valorB != null ? fmtMoney(r.valorB) : '<span class="muted">—</span>') + '</td>' +
+        '<td><span class="status-pill ' + pillCls + '">' + r.label + '</span></td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  area.innerHTML = html;
+  area.querySelectorAll('.filters button').forEach(btn => {
+    btn.addEventListener('click', () => { currentFilter = btn.dataset.f; renderResults(); });
+  });
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
+  document.getElementById('exportXlsxBtn').addEventListener('click', exportXLSX);
+}
+
+async function exportXLSX(){
+  const btn = document.getElementById('exportXlsxBtn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Gerando...';
+  btn.disabled = true;
+  try{
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Comparativo');
+
+    const headers = ['Nome (A)','CPF (A)','Valor (A)','Nome (B)','CPF (B)','Valor (B)','Status'];
+    ws.columns = [
+      { width: 34 }, { width: 18 }, { width: 15 },
+      { width: 34 }, { width: 18 }, { width: 15 }, { width: 32 }
+    ];
+    const headerRow = ws.addRow(headers);
+    headerRow.eachCell(cell => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Arial' };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = { top:{style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+    });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const okFill = 'FFC6EFCE', okFont = 'FF006100';
+    const warnFill = 'FFFCF3DC', warnFont = 'FF7A5A0A';
+    const dangerFill = 'FFFFC7CE', dangerFont = 'FF9C0006';
+
+    currentResults.forEach(r => {
+      const row = ws.addRow([r.nameA, r.cpfA, r.valorA != null ? r.valorA : null, r.nameB, r.cpfB, r.valorB != null ? r.valorB : null, r.label]);
+      const fill = r.status === 'ok' ? okFill : (r.status === 'warn' ? warnFill : dangerFill);
+      const font = r.status === 'ok' ? okFont : (r.status === 'warn' ? warnFont : dangerFont);
+      row.eachCell((cell, colNumber) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+        cell.font = { color: { argb: font }, name: 'Arial' };
+        cell.border = { top:{style:'thin', color:{argb:'FFD9D9D9'}}, bottom:{style:'thin', color:{argb:'FFD9D9D9'}}, left:{style:'thin', color:{argb:'FFD9D9D9'}}, right:{style:'thin', color:{argb:'FFD9D9D9'}} };
+        if (colNumber === 3 || colNumber === 6) cell.numFmt = '"R$" #,##0.00';
+      });
+    });
+
+    const ws2 = wb.addWorksheet('Resumo');
+    ws2.getCell('A1').value = 'RESUMO DA CONFERÊNCIA';
+    ws2.getCell('A1').font = { bold: true, size: 14, name: 'Arial' };
+    ws2.getColumn(1).width = 55;
+    ws2.getColumn(2).width = 20;
+
+    const total = currentResults.length;
+    const ok = currentResults.filter(r => r.status==='ok').length;
+    const warn = currentResults.filter(r => r.status==='warn').length;
+    const danger = currentResults.filter(r => r.status==='danger').length;
+    const totalA = currentResults.reduce((s,r) => s + (r.valorA||0), 0);
+    const totalB = currentResults.reduce((s,r) => s + (r.valorB||0), 0);
+
+    const summaryRows = [
+      ['Total de registros comparados', total],
+      ['Conferem (nome e valor batem)', ok],
+      ['A verificar (nome parecido / sem CPF)', warn],
+      ['Divergências (valor, duplicata ou faltante)', danger],
+      ['Total lado A (pago)', totalA],
+      ['Total lado B (esperado)', totalB],
+      ['Diferença', totalA - totalB]
+    ];
+    let r = 3;
+    summaryRows.forEach(([label, val]) => {
+      const c1 = ws2.getCell('A' + r), c2 = ws2.getCell('B' + r);
+      c1.value = label; c1.font = { bold: true, name: 'Arial' };
+      c2.value = val; c2.font = { name: 'Arial' };
+      if (label.includes('Total') || label.includes('Diferença')) c2.numFmt = '"R$" #,##0.00';
+      r++;
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'comparativo_pagamentos.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(err){
+    alert('Erro ao gerar XLSX: ' + err.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+function exportCSV(){
+  const rows = [['Nome (A)','CPF (A)','Valor (A)','Nome (B)','CPF (B)','Valor (B)','Status']];
+  currentResults.forEach(r => {
+    rows.push([r.nameA, r.cpfA, r.valorA != null ? r.valorA.toFixed(2) : '', r.nameB, r.cpfB, r.valorB != null ? r.valorB.toFixed(2) : '', r.label]);
+  });
+  const csv = rows.map(row => row.map(c => '"' + String(c==null?'':c).replace(/"/g,'""') + '"').join(';')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'comparativo_pagamentos.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 </script>
 </body>
 </html>
