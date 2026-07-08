@@ -394,11 +394,15 @@ tr.dov td{border-top:2px solid var(--accent)!important}
       </div>
       <div class="sb">
         <div class="sh">Registros projetados</div>
-        <div class="prow" id="projSum"><span class="pill"><span class="dot dgr"></span>Carregando...</span></div>
+        <div class="tb" style="margin-bottom:10px">
+          <div class="prow" id="projSum" style="margin-bottom:0"><span class="pill"><span class="dot dgr"></span>Carregando...</span></div>
+          <button class="btn exp" style="margin-left:auto" onclick="exportProj()">&#8659; Exportar Excel</button>
+        </div>
+        <div class="ibox" style="margin-bottom:10px">Edite os campos diretamente na tabela e clique em <strong>✓</strong> para salvar cada linha.</div>
         <div class="tw">
           <table>
-            <thead><tr><th>Nome / Fornecedor</th><th>Competência</th><th class="val">Valor</th><th>Observação</th><th>Ação</th></tr></thead>
-            <tbody id="projBody"><tr><td colspan="5" class="erow">Carregando...</td></tr></tbody>
+            <thead><tr><th>Nome / Fornecedor</th><th>Competência</th><th class="val">Valor</th><th>Observação</th><th>Salvar</th><th>Excluir</th></tr></thead>
+            <tbody id="projBody"><tr><td colspan="6" class="erow">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1064,17 +1068,56 @@ async function renderProjTable(){
   try{
     var res=await sb.from('projetados').select('*').eq('org',currentOrg).order('created_at');
     var data=res.data||[];
+    projData=data;
     if(!data.length){
-      tbody.innerHTML='<tr><td colspan="5" class="erow">Nenhum projetado cadastrado</td></tr>';
+      tbody.innerHTML='<tr><td colspan="6" class="erow">Nenhum projetado cadastrado</td></tr>';
       sumEl.innerHTML='<span class="pill"><span class="dot dgr"></span>Nenhum projetado</span>';return;
     }
     var tot=data.reduce(function(a,p){return a+(p.valor||0);},0);
     sumEl.innerHTML='<span class="pill"><span class="dot dt"></span>'+data.length+' projetados — '+fmtR(tot)+'</span>';
     tbody.innerHTML=data.map(function(p){
-      return'<tr><td>'+esc(p.nome)+'</td><td>'+esc(p.competencia)+'</td><td class="val">'+fmtR(p.valor)+'</td><td>'+esc(p.obs||'')+'</td><td><button class="btn xs dan" onclick="delProj(\''+p.id+'\')">&#10005;</button></td></tr>';
+      return'<tr data-id="'+p.id+'">'+
+        '<td><input type="text" class="pi" value="'+esc(p.nome)+'" data-field="nome" data-id="'+p.id+'"></td>'+
+        '<td><input type="text" class="pi" style="width:90px" maxlength="7" value="'+esc(p.competencia)+'" data-field="competencia" data-id="'+p.id+'" oninput="fmtC(this)"></td>'+
+        '<td><input type="number" class="pi" style="width:110px;text-align:right" step="0.01" min="0" value="'+p.valor+'" data-field="valor" data-id="'+p.id+'"></td>'+
+        '<td><input type="text" class="pi" value="'+esc(p.obs||'')+'" data-field="obs" data-id="'+p.id+'"></td>'+
+        '<td><button class="btn xs suc" onclick="saveProjRow(\''+p.id+'\')" title="Salvar alterações">&#10003;</button></td>'+
+        '<td><button class="btn xs dan" onclick="delProj(\''+p.id+'\')" title="Excluir">&#10005;</button></td>'+
+      '</tr>';
     }).join('');
-  }catch(e){tbody.innerHTML='<tr><td colspan="5" class="erow">Erro ao carregar</td></tr>';}
+  }catch(e){tbody.innerHTML='<tr><td colspan="6" class="erow">Erro ao carregar</td></tr>';}
 }
+
+var projData=[];
+
+async function saveProjRow(id){
+  var row=document.querySelector('tr[data-id="'+id+'"]');
+  if(!row)return;
+  var nome=row.querySelector('[data-field="nome"]').value.trim();
+  var comp=row.querySelector('[data-field="competencia"]').value.trim();
+  var valor=parseFloat(row.querySelector('[data-field="valor"]').value)||0;
+  var obs=row.querySelector('[data-field="obs"]').value.trim();
+  if(!nome||!comp||!valor){alert('Preencha Nome, Competência e Valor.');return;}
+  if(!/^\d{2}\/\d{4}$/.test(comp)){alert('Competência deve ser MM/AAAA.');return;}
+  setSyncing();
+  var res=await sb.from('projetados').update({nome:nome,competencia:comp,valor:valor,obs:obs}).eq('id',id);
+  if(res.error){setSyncErr();toast('Erro: '+res.error.message);return;}
+  setSaved();await renderProjTable();toast('✓ Projetado atualizado!');
+}
+
+function exportProj(){
+  if(!projData.length){alert('Nenhum projetado para exportar.');return;}
+  var data=[['Nome / Fornecedor','Competência','Valor','Observação']];
+  var tot=0;
+  projData.forEach(function(p){data.push([p.nome,p.competencia,p.valor,p.obs||'']);tot+=p.valor;});
+  data.push(['','','','Total: '+fmtR(tot)]);
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:32},{wch:14},{wch:16},{wch:32}];
+  for(var i=1;i<data.length-1;i++){var a=XLSX.utils.encode_cell({r:i,c:2});if(ws[a]&&typeof ws[a].v==='number')ws[a].z='"R$"#,##0.00';}
+  XLSX.utils.book_append_sheet(wb,ws,'Projetados');
+  XLSX.writeFile(wb,'projetados_'+ds()+'.xlsx');toast('↓ Exportando projetados...');
+}
+
 async function addProj(){
   var nome=document.getElementById('pNome').value.trim();
   var c=document.getElementById('pComp').value.trim();
